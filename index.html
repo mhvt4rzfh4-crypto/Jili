@@ -58,6 +58,7 @@
     <div class="stats" aria-live="polite">
       <div class="stat">Balance: <span id="balance">5000</span></div>
       <div class="stat">Bet: <span id="betDisplay">10</span></div>
+      <div class="stat">Free Spins: <span id="freeSpins">0</span></div>
       <div class="stat">Last Win: <span id="lastWin">0</span></div>
       <div class="stat">Total Wins: <span id="totalWins">0</span></div>
     </div>
@@ -120,7 +121,7 @@
     const WEIGHTED = buildWeightedPool();
     function weightedPick(){ return WEIGHTED[Math.floor(Math.random()*WEIGHTED.length)]; }
 
-    const gameState = { balance:5000, bet:10, multiplier:1, isSpinning:false, lastWin:0, totalWins:0, auto:false };
+    const gameState = { balance:5000, bet:10, multiplier:1, isSpinning:false, lastWin:0, totalWins:0, auto:false, freeSpins:0 };
 
     function initReels(){ const container=document.getElementById('reels'); container.innerHTML='';
       for(let c=0;c<REELS;c++){ const col=document.createElement('div'); col.className='reel'; col.id=`reel-${c}`;
@@ -168,6 +169,7 @@
       document.getElementById('betDisplay').textContent = gameState.bet;
       document.getElementById('betAmount').textContent = gameState.bet;
       document.getElementById('autoBtn').textContent = `🔁 Auto: ${gameState.auto? 'On' : 'Off'}`;
+      document.getElementById('freeSpins').textContent = gameState.freeSpins;
     }
 
     // --- Accessibility announcement ---
@@ -223,7 +225,13 @@
         if(id==='wild') wildCount++;
         if(id==='ace') aceCount++;
       }
-      if(scatterCount>=3){ const bonus = gameState.bet * 50; totalWin += bonus; announce(`Scatter bonus ${bonus}`); }
+      if(scatterCount>=3){
+        // Award free spins instead of direct coin bonus
+        gameState.freeSpins += 10;
+        announce(`You've won 10 Free Spins!`);
+        celebrateWin();
+        beep(1000,0.12,0.18);
+      }
       if(wildCount>=3){ const bonus = gameState.bet * 80; totalWin += bonus; announce(`Wild bonus ${bonus}`); }
       if(aceCount>=5){ const bonus = gameState.bet * 200; totalWin += bonus; announce(`SUPER ACE! ${bonus}`); }
 
@@ -237,13 +245,15 @@
 
     async function spin(isTurbo=false){
       if(gameState.isSpinning) return; // avoid concurrent
-      if(gameState.bet > gameState.balance){ announce('Insufficient balance'); return; }
+      const isFree = gameState.freeSpins > 0;
+      if(!isFree && gameState.bet > gameState.balance){ announce('Insufficient balance'); return; }
       gameState.isSpinning = true;
       const actualBet = gameState.bet;
-      gameState.balance -= actualBet;
+      if(!isFree){ gameState.balance -= actualBet; }
+      else{ gameState.freeSpins -= 1; announce('Using a Free Spin'); }
       updateUI();
-      announce(`Spinning bet ${actualBet}`);
-      safeLog('spin_start',{bet:actualBet, balance:gameState.balance});
+      announce(`Spinning bet ${isFree? 'FREE' : actualBet}`);
+      safeLog('spin_start',{bet:actualBet, balance:gameState.balance, free:isFree});
 
       // play spin sound
       soundSpin(isTurbo);
@@ -282,8 +292,8 @@
       updateUI();
       gameState.isSpinning = false;
 
-      // auto-spin
-      if(gameState.auto && gameState.balance >= gameState.bet){ await wait(300); spin(isTurbo); }
+      // auto-spin: continue if auto is on and either have free spins or enough balance
+      if(gameState.auto && (gameState.freeSpins > 0 || gameState.balance >= gameState.bet)){ await wait(300); spin(isTurbo); }
     }
 
     function soundSpin(isTurbo){ try{ ensureAudio(); for(let i=0;i<4;i++) setTimeout(()=>beep(360 + i*40, 0.06, 0.06), i * (isTurbo?30:80)); }catch(e){} }
