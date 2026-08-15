@@ -11,14 +11,23 @@
   <link rel="preload" href="assets/cards/ace.svg?v=2" as="image" type="image/svg+xml">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#0d0221,#1a0033);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-    .game{width:920px;max-width:100%;background:linear-gradient(180deg,#1a0033,#0d0221);color:#fff;border:4px solid #ffd700;padding:18px;border-radius:16px;position:relative;overflow:hidden}
+    html,body{height:100%;}
+    body{font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#0d0221,#1a0033);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;overflow-x:hidden}
+
+    /* container sizing fixed and responsive */
+    .game{max-width:920px;width:100%;box-sizing:border-box;background:linear-gradient(180deg,#1a0033,#0d0221);color:#fff;border:4px solid #ffd700;padding:18px;border-radius:16px;position:relative;overflow:hidden}
+
     .header{text-align:center;color:#ffd700;margin-bottom:12px;z-index:40;position:relative}
     .reels-wrap{position:relative;z-index:10}
     .reels{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;background:rgba(0,0,0,0.05);padding:12px;border-radius:12px}
+
+    /* allow flex/grid children to shrink on small screens */
+    .reel, .cell { min-width: 0; }
     .reel{display:flex;flex-direction:column;gap:8px}
     .cell{aspect-ratio:3/4;background:linear-gradient(135deg,#2a1a52,#1a0a32);border:2px solid #ff6600;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden}
-    .cell img{width:90%;height:90%;object-fit:contain;border-radius:8px;display:block}
+
+    /* make images fully responsive inside their cells */
+    .cell img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;border-radius:8px;display:block}
     .cell.wild{box-shadow:0 0 20px #00ff88}
     .cell.scatter{box-shadow:0 0 20px #ffaa00}
     .cell.winning{animation:glow .6s ease-in-out infinite;border-color:#ffff00}
@@ -29,7 +38,7 @@
 
     .controls{display:flex;gap:10px;justify-content:center;margin-top:12px;z-index:40;position:relative}
     button{padding:12px 18px;border-radius:10px;border:0;background:#ff6600;color:#fff;font-weight:700;cursor:pointer}
-    .stats{display:flex;gap:12px;justify-content:center;margin-bottom:12px}
+    .stats{display:flex;gap:12px;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
     .stat{background:rgba(255,215,0,0.06);padding:8px 12px;border-radius:8px;color:#ffd700}
 
     .bet-controls{display:flex;gap:8px;align-items:center}
@@ -40,7 +49,7 @@
     @media (prefers-reduced-motion: reduce) { #coinLayer{display:none} }
 
     /* small screens */
-    @media (max-width:600px){.game{padding:12px}.cell{font-size:1.2rem}}
+    @media (max-width:600px){.game{padding:12px}.cell{font-size:1.2rem}.reels{gap:6px;padding:8px}}
 
     /* Accessible live region (hidden visually) */
     .sr-only{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
@@ -59,8 +68,6 @@
       <div class="stat">Balance: <span id="balance">5000</span></div>
       <div class="stat">Bet: <span id="betDisplay">10</span></div>
       <div class="stat">Free Spins: <span id="freeSpins">0</span></div>
-      <div class="stat">Last Win: <span id="lastWin">0</span></div>
-      <div class="stat">Total Wins: <span id="totalWins">0</span></div>
     </div>
 
     <div class="reels-wrap">
@@ -121,7 +128,7 @@
     const WEIGHTED = buildWeightedPool();
     function weightedPick(){ return WEIGHTED[Math.floor(Math.random()*WEIGHTED.length)]; }
 
-    const gameState = { balance:5000, bet:10, multiplier:1, isSpinning:false, lastWin:0, totalWins:0, auto:false, freeSpins:0 };
+    const gameState = { balance:5000, bet:10, multiplier:1, isSpinning:false, totalWins:0, auto:false, freeSpins:0 };
 
     function initReels(){ const container=document.getElementById('reels'); container.innerHTML='';
       for(let c=0;c<REELS;c++){ const col=document.createElement('div'); col.className='reel'; col.id=`reel-${c}`;
@@ -164,7 +171,6 @@
 
     function updateUI(){
       document.getElementById('balance').textContent = gameState.balance;
-      document.getElementById('lastWin').textContent = gameState.lastWin;
       document.getElementById('totalWins').textContent = gameState.totalWins;
       document.getElementById('betDisplay').textContent = gameState.bet;
       document.getElementById('betAmount').textContent = gameState.bet;
@@ -285,7 +291,6 @@
 
       // determine wins
       const win = checkWins();
-      gameState.lastWin = win;
       if(win>0){ gameState.balance += win; gameState.totalWins += win; celebrateWin(); beep(880,0.12,0.2); announce(`You won ${win}`); safeLog('spin_win',{bet:actualBet, win}); }
       else { announce('No win'); safeLog('spin_loss',{bet:actualBet}); }
 
