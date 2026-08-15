@@ -4,9 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>JILI SUPER ACE</title>
+  <!-- Ensure assets resolve correctly under the repo subpath -->
+  <base href="/Jili/">
   <!-- Preload important assets -->
-  <link rel="preload" href="assets/cards/scatter-coin.svg" as="image" type="image/svg+xml">
-  <link rel="preload" href="assets/cards/ace.svg" as="image" type="image/svg+xml">
+  <link rel="preload" href="assets/cards/scatter-coin.svg?v=2" as="image" type="image/svg+xml">
+  <link rel="preload" href="assets/cards/ace.svg?v=2" as="image" type="image/svg+xml">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#0d0221,#1a0033);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -78,6 +80,7 @@
     function safeLog(name, params={}){ try{ if(analyticsMod && analytics) analyticsMod.logEvent(analytics, name, params);}catch(e){} }
 
     // --- Game + reels (kept from previous) ---
+    const ASSET_SUFFIX = '?v=2';
     const SYMBOL_POOL = [
       {id:'ace', name:'Ace', file:'assets/cards/ace.svg', weight:6, type:'face'},
       {id:'king',name:'King', file:'assets/cards/king.svg', weight:3, type:'face'},
@@ -105,7 +108,7 @@
       randomizeReels();
     }
 
-    function setImageWithFallback(img,s){ img.dataset.id=s.id; img.alt=s.name; img.src=s.file; img.onload=()=>{}; img.onerror=()=>{ const parent=img.parentElement; parent.innerHTML=''; parent.textContent=s.name[0]||'?'; parent.style.fontSize='1.6rem'; parent.classList.remove('wild','scatter'); } }
+    function setImageWithFallback(img,s){ img.dataset.id=s.id; img.alt=s.name; const suffix = ASSET_SUFFIX; img.src = s.file + suffix; img.onload=()=>{}; img.onerror=()=>{ const parent=img.parentElement; parent.innerHTML=''; parent.textContent=s.name[0]||'?'; parent.style.fontSize='1.6rem'; parent.classList.remove('wild','scatter'); } }
 
     function randomizeReels(){ for(let c=0;c<REELS;c++) for(let r=0;r<ROWS;r++){ const el=document.getElementById(`symbol-${c}-${r}`); if(!el) continue; let img=el.querySelector('img'); if(!img){ el.innerHTML=''; img=document.createElement('img'); img.className='card-image'; el.appendChild(img);} const s=weightedPick(); el.className='cell'; if(s.type==='wild') el.classList.add('wild'); if(s.type==='scatter') el.classList.add('scatter'); setImageWithFallback(img,s); } }
 
@@ -125,7 +128,7 @@
     window.addEventListener('resize', resizeCanvas);
 
     // load coin image (scatter) and small coin sprite for particles
-    const coinImg = new Image(); coinImg.src = 'assets/cards/scatter-coin.svg';
+    const coinImg = new Image(); coinImg.src = 'assets/cards/scatter-coin.svg' + ASSET_SUFFIX;
 
     const MAX_PARTICLES = 40; const particles = []; let particlePool=[]; for(let i=0;i<MAX_PARTICLES;i++) particlePool.push({alive:false,x:0,y:0,vx:0,vy:0,rot:0,vr:0,alpha:1,size:32});
 
