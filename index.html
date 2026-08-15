@@ -1,317 +1,305 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jili Super Ace - Slot Machine</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #0d0221 0%, #1a0033 50%, #0d0221 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 10px; }
-        .game-container { background: linear-gradient(to bottom, #1a0033, #0d0221); border: 4px solid #FFD700; border-radius: 20px; padding: 20px; max-width: 900px; width: 100%; box-shadow: 0 0 80px rgba(255, 215, 0, 0.8), inset 0 0 40px rgba(255, 215, 0, 0.2); overflow-x: hidden; }
-        .header { text-align: center; margin-bottom: 15px; color: #FFD700; text-shadow: 0 0 30px rgba(255, 215, 0, 1); }
-        .header h1 { font-size: 2.5em; margin-bottom: 3px; font-weight: bold; letter-spacing: 1px; }
-        .header p { font-size: 1em; color: #FF6600; text-shadow: 0 0 15px rgba(255, 102, 0, 1); }
-        .header-controls { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
-        .sound-toggle { background: linear-gradient(135deg, #4a4a4a, #2a2a2a); border: 2px solid #FF6600; border-radius: 8px; padding: 8px 12px; color: white; cursor: pointer; font-weight: bold; font-size: 1em; transition: all 0.3s; }
-        .sound-toggle:hover { box-shadow: 0 0 15px rgba(255, 102, 0, 0.8); transform: scale(1.05); }
-        .sound-toggle.muted { background: linear-gradient(135deg, #8B0000, #660000); border-color: #FFD700; }
-        .stats-top { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-        .stat { background: rgba(255, 215, 0, 0.1); border: 2px solid #FF6600; border-radius: 10px; padding: 10px; text-align: center; color: white; }
-        .stat-label { font-size: 0.8em; color: #FFD700; text-transform: uppercase; }
-        .stat-value { font-size: 1.4em; color: #FFD700; font-weight: bold; margin-top: 3px; }
-        .bet-controls { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 15px; align-items: center; background: rgba(255, 102, 0, 0.1); border: 2px solid #FF6600; border-radius: 10px; padding: 12px; }
-        .bet-btn { padding: 10px; background: linear-gradient(135deg, #FF6600, #FFAA00); border: 2px solid #FFD700; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: all 0.3s; font-size: 0.95em; }
-        .bet-btn:hover { box-shadow: 0 0 20px rgba(255, 102, 0, 1); transform: scale(1.05); }
-        .bet-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .bet-display { text-align: center; color: #FFD700; font-weight: bold; font-size: 1.3em; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
-        .reels-container { background: linear-gradient(to bottom, #0a0015, #1a0033); border: 4px solid #FFD700; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8); overflow: hidden; }
-        .reels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-        .reel { display: flex; flex-direction: column; gap: 6px; perspective: 1000px; }
-        .reel-symbol { aspect-ratio: 3/4; background: linear-gradient(135deg, #2a1a52 0%, #1a0a32 100%); border: 2px solid #FF6600; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 2em; font-weight: bold; color: white; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); transition: all 0.1s; box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5); overflow: hidden; }
-        .card-image { width: 90%; height: 90%; object-fit: contain; border-radius: 8px; }
-        .reel-symbol.spinning { animation: spin-reel 0.1s ease-in-out; }
-        @keyframes spin-reel { 0%, 100% { transform: rotateY(0deg); } 50% { transform: rotateY(180deg); } }
-        .reel-symbol.wild { box-shadow: 0 0 20px rgba(0, 255, 136, 1), inset 0 0 15px rgba(0, 255, 136, 0.4); }
-        .reel-symbol.scatter { box-shadow: 0 0 20px rgba(255, 170, 0, 1), inset 0 0 15px rgba(255, 255, 0, 0.3); }
-        .reel-symbol.winning { animation: pulse-glow 0.5s ease-in-out infinite !important; box-shadow: 0 0 30px rgba(255, 215, 0, 1), inset 0 0 20px rgba(255, 215, 0, 0.6) !important; border-color: #FFFF00 !important; }
-        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); } 50% { box-shadow: 0 0 40px rgba(255, 215, 0, 1); } }
-        .controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        button { padding: 15px; font-size: 1.1em; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; }
-        #spinBtn { background: linear-gradient(135deg, #FF0000, #CC0000); color: white; box-shadow: 0 0 30px rgba(255, 0, 0, 0.8); border: 3px solid #FFFF00; font-size: 1.2em; }
-        #spinBtn:hover:not(:disabled) { box-shadow: 0 0 60px rgba(255, 0, 0, 1); transform: scale(1.05); }
-        #spinBtn:disabled { opacity: 0.3; cursor: not-allowed; }
-        #turboBtn { background: linear-gradient(135deg, #FF6600, #FFAA00); color: white; box-shadow: 0 0 25px rgba(255, 102, 0, 0.8); border: 3px solid #FFFF00; }
-        #turboBtn:hover:not(:disabled) { box-shadow: 0 0 50px rgba(255, 102, 0, 1); transform: scale(1.05); }
-        #turboBtn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, #FFD700 0%, #FFED4E 100%); border: 4px solid #FF6600; border-radius: 25px; padding: 40px 60px; font-size: 2.5em; font-weight: bold; color: black; text-shadow: 3px 3px 6px rgba(255, 102, 0, 0.8); box-shadow: 0 0 80px rgba(255, 215, 0, 1); animation: message-pop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 1000; pointer-events: none; }
-        @keyframes message-pop { 0% { transform: translate(-50%, -50%) scale(0) rotate(-20deg); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; } }
-        .info-message { background: rgba(255, 102, 0, 0.2); border: 2px solid #FF6600; border-radius: 10px; padding: 12px; text-align: center; color: #FFD700; font-weight: bold; font-size: 1em; }
-        @media (max-width: 600px) { .header h1 { font-size: 1.8em; } .reel-symbol { font-size: 1.5em; } .stats-top { grid-template-columns: repeat(3, 1fr); } button { padding: 12px; font-size: 0.95em; } .header-controls { flex-direction: column; } }
-        /* focus outline for accessibility */
-        button:focus, .bet-btn:focus, .sound-toggle:focus { outline: 3px solid rgba(255,215,0,0.6); }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>JILI SUPER ACE</title>
+  <!-- Ensure assets resolve correctly under the repo subpath -->
+  <base href="/Jili/">
+  <!-- Preload important assets -->
+  <link rel="preload" href="assets/cards/scatter-coin.svg?v=2" as="image" type="image/svg+xml">
+  <link rel="preload" href="assets/cards/ace.svg?v=2" as="image" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#0d0221,#1a0033);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .game{width:920px;max-width:100%;background:linear-gradient(180deg,#1a0033,#0d0221);color:#fff;border:4px solid #ffd700;padding:18px;border-radius:16px;position:relative;overflow:hidden}
+    .header{text-align:center;color:#ffd700;margin-bottom:12px;z-index:40;position:relative}
+    .reels-wrap{position:relative;z-index:10}
+    .reels{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;background:rgba(0,0,0,0.05);padding:12px;border-radius:12px}
+    .reel{display:flex;flex-direction:column;gap:8px}
+    .cell{aspect-ratio:3/4;background:linear-gradient(135deg,#2a1a52,#1a0a32);border:2px solid #ff6600;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden}
+    .cell img{width:90%;height:90%;object-fit:contain;border-radius:8px;display:block}
+    .cell.wild{box-shadow:0 0 20px #00ff88}
+    .cell.scatter{box-shadow:0 0 20px #ffaa00}
+    .cell.winning{animation:glow .6s ease-in-out infinite;border-color:#ffff00}
+    @keyframes glow{0%{filter:drop-shadow(0 0 8px #ffd700)}50%{filter:drop-shadow(0 0 28px #ffd700)}100%{filter:drop-shadow(0 0 8px #ffd700)}}
+
+    /* Particle canvas sits above reels but below header controls; pointer-events disabled so it doesn't block clicks */
+    #coinLayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:20}
+
+    .controls{display:flex;gap:10px;justify-content:center;margin-top:12px;z-index:40;position:relative}
+    button{padding:12px 18px;border-radius:10px;border:0;background:#ff6600;color:#fff;font-weight:700;cursor:pointer}
+    .stats{display:flex;gap:12px;justify-content:center;margin-bottom:12px}
+    .stat{background:rgba(255,215,0,0.06);padding:8px 12px;border-radius:8px;color:#ffd700}
+
+    .bet-controls{display:flex;gap:8px;align-items:center}
+    .bet-controls button{padding:6px 10px;border-radius:6px;background:#222;color:#fff;border:1px solid #444}
+    .bet-display{background:rgba(0,0,0,0.25);padding:6px 10px;border-radius:6px;color:#fff;font-weight:700}
+
+    /* motion preference: disable particle animations for reduced motion */
+    @media (prefers-reduced-motion: reduce) { #coinLayer{display:none} }
+
+    /* small screens */
+    @media (max-width:600px){.game{padding:12px}.cell{font-size:1.2rem}}
+
+    /* Accessible live region (hidden visually) */
+    .sr-only{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
+  </style>
 </head>
 <body>
-    <div class="game-container">
-        <div class="header">
-            <h1>🎰 JILI SUPER ACE 🎰</h1>
-            <p>SLOT MACHINE</p>
-            <div class="header-controls">
-                <button class="sound-toggle" id="soundToggle" aria-pressed="false" aria-label="Toggle sound">🔊 SOUND ON</button>
-            </div>
-        </div>
+  <div class="game" role="application">
+    <canvas id="coinLayer" aria-hidden="true"></canvas>
 
-        <div class="stats-top" role="region" aria-live="polite">
-            <div class="stat">
-                <div class="stat-label">Balance</div>
-                <div class="stat-value" id="balance">5000</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Win</div>
-                <div class="stat-value" id="lastWin">0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Total Wins</div>
-                <div class="stat-value" id="totalWins">0</div>
-            </div>
-        </div>
-
-        <div class="bet-controls">
-            <button class="bet-btn" id="decreaseBet" aria-label="Decrease bet">➖ BET -</button>
-            <div class="bet-display">Bet: <span id="betAmount">10</span> | Win: <span id="multiplier">1</span>x</div>
-            <button class="bet-btn" id="increaseBet" aria-label="Increase bet">BET + ➕</button>
-        </div>
-
-        <div class="reels-container">
-            <div class="reels" id="reels" aria-hidden="false"></div>
-        </div>
-
-        <div class="controls">
-            <button id="spinBtn" aria-label="Spin">🎯 SPIN</button>
-            <button id="turboBtn" aria-label="Turbo spin">⚡ TURBO</button>
-        </div>
-
-        <div class="info-message" id="infoMessage">👈 Adjust bet and click SPIN to play!</div>
+    <div class="header">
+      <h1>🎰 JILI SUPER ACE</h1>
+      <div style="color:#ffb366">Polished particle effects & accessibility</div>
     </div>
 
-    <script type="module">
-        // Firebase imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js";
+    <div class="stats" aria-live="polite">
+      <div class="stat">Balance: <span id="balance">5000</span></div>
+      <div class="stat">Bet: <span id="betDisplay">10</span></div>
+      <div class="stat">Last Win: <span id="lastWin">0</span></div>
+      <div class="stat">Total Wins: <span id="totalWins">0</span></div>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDndzhlq7tIR03UZroax1iE59RXF27I4Z8",
-            authDomain: "jili-c6b1a.firebaseapp.com",
-            projectId: "jili-c6b1a",
-            storageBucket: "jili-c6b1a.firebasestorage.app",
-            messagingSenderId: "665157239109",
-            appId: "1:665157239109:web:758500e566830c29b57e2c",
-            measurementId: "G-YSZYWY42QB"
-        };
+    <div class="reels-wrap">
+      <div class="reels" id="reels" aria-hidden="false"></div>
+    </div>
 
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
+    <div class="controls">
+      <div class="bet-controls">
+        <button id="betDec" aria-label="Decrease bet">−</button>
+        <div class="bet-display" id="betAmount">10</div>
+        <button id="betInc" aria-label="Increase bet">+</button>
+      </div>
 
-        // Sound Manager
-        class SoundManager {
-            constructor() {
-                this.audioContext = null;
-                this.soundEnabled = true;
-                this.initAudioContext();
-            }
+      <button id="spinBtn">🎯 SPIN</button>
+      <button id="turboBtn">⚡ TURBO</button>
+      <button id="autoBtn">🔁 Auto: Off</button>
+      <button id="particleToggle">✨ Particles: On</button>
+    </div>
 
-            initAudioContext() {
-                if (!this.audioContext) {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-            }
+    <div class="sr-only" aria-live="assertive" id="srAnnounce"></div>
+  </div>
 
-            async resumeIfNeeded() {
-                try {
-                    if (this.audioContext && this.audioContext.state === 'suspended') {
-                        await this.audioContext.resume();
-                    }
-                } catch (e) {
-                    // ignore
-                }
-            }
+  <script type="module">
+    // Minimal safe analytics load (non-blocking)
+    // (left as in-repo; don't block game)
+    let analyticsMod=null, analytics=null;
+    function safeLog(name, params={}){ try{ /* stub */ }catch(e){} }
 
-            playBeep(frequency = 800, duration = 100, volume = 0.3) {
-                if (!this.soundEnabled || !this.audioContext) return;
+    // --- Game + reels ---
+    const ASSET_SUFFIX = '?v=2';
+    const SYMBOL_POOL = [
+      {id:'ace', name:'Ace', file:'assets/cards/ace.svg', weight:6, type:'face'},
+      {id:'king',name:'King', file:'assets/cards/king.svg', weight:3, type:'face'},
+      {id:'queen',name:'Queen', file:'assets/cards/queen.svg', weight:3, type:'face'},
+      {id:'jack',name:'Jack', file:'assets/cards/jack.svg', weight:3, type:'face'},
+      {id:'spade',name:'Spade', file:'assets/cards/speed.svg', weight:2, type:'symbol'},
+      {id:'diamond',name:'Diamond', file:'assets/cards/diamond.svg', weight:2, type:'symbol'},
+      {id:'heart',name:'Heart', file:'assets/cards/heart.svg', weight:2, type:'symbol'},
+      {id:'clubs',name:'Clubs', file:'assets/cards/clubs.svg', weight:2, type:'symbol'}
+    ];
+    const WILD = {id:'wild', name:'Wild', file:'assets/cards/wild.svg', weight:0.1, type:'wild'};
+    const SCATTER = {id:'scatter', name:'Scatter', file:'assets/cards/scatter-coin.svg', weight:0.05, type:'scatter'};
+    const REELS=5, ROWS=4;
 
-                const now = this.audioContext.currentTime;
-                const osc = this.audioContext.createOscillator();
-                const gain = this.audioContext.createGain();
+    function buildWeightedPool(){
+      const pool=[];
+      SYMBOL_POOL.forEach(s=>{
+        const n = Math.max(1, Math.round(s.weight * 10));
+        for(let i=0;i<n;i++) pool.push(s);
+      });
+      // add a few wilds/scatters
+      const wildCount = Math.max(1, Math.round(WILD.weight * 10));
+      for(let i=0;i<wildCount;i++) pool.push(WILD);
+      const scatterCount = Math.max(1, Math.round(SCATTER.weight * 10));
+      for(let i=0;i<scatterCount;i++) pool.push(SCATTER);
+      return pool;
+    }
+    const WEIGHTED = buildWeightedPool();
+    function weightedPick(){ return WEIGHTED[Math.floor(Math.random()*WEIGHTED.length)]; }
 
-                osc.connect(gain);
-                gain.connect(this.audioContext.destination);
+    const gameState = { balance:5000, bet:10, multiplier:1, isSpinning:false, lastWin:0, totalWins:0, auto:false };
 
-                osc.frequency.value = frequency;
-                osc.type = 'sine';
-
-                gain.gain.setValueAtTime(volume, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
-
-                osc.start(now);
-                osc.stop(now + duration / 1000);
-
-                osc.onended = () => { try { osc.disconnect(); gain.disconnect(); } catch(e){} };
-            }
-
-            spinSound() {
-                if (!this.soundEnabled || !this.audioContext) return;
-                for (let i = 0; i < 8; i++) {
-                    setTimeout(() => { this.playBeep(400 + i * 100, 80, 0.2); }, i * 40);
-                }
-            }
-
-            winSound() {
-                if (!this.soundEnabled || !this.audioContext) return;
-                const notes = [523, 659, 784, 1047];
-                notes.forEach((freq, i) => { setTimeout(() => { this.playBeep(freq, 150, 0.4); }, i * 100); });
-            }
-
-            jackpotSound() { if (!this.soundEnabled || !this.audioContext) return; const notes = [800,1000,1200,1400,1600,1400,1200,1000]; notes.forEach((freq,i)=>setTimeout(()=>this.playBeep(freq,100,0.3), i*80)); }
-            bonusSound() { if (!this.soundEnabled || !this.audioContext) return; for (let i=0;i<10;i++){ const freq=600+Math.sin(i)*200; setTimeout(()=>this.playBeep(freq,100,0.25), i*50); } }
-            clickSound() { if (!this.soundEnabled || !this.audioContext) return; this.playBeep(600,50,0.15); }
-            toggleSound() { this.soundEnabled = !this.soundEnabled; return this.soundEnabled; }
+    function initReels(){ const container=document.getElementById('reels'); container.innerHTML='';
+      for(let c=0;c<REELS;c++){ const col=document.createElement('div'); col.className='reel'; col.id=`reel-${c}`;
+        for(let r=0;r<ROWS;r++){ const cell=document.createElement('div'); cell.className='cell'; cell.id=`symbol-${c}-${r}`;
+          const img=document.createElement('img'); img.className='card-image';
+          img.alt='';
+          cell.appendChild(img);
+          col.appendChild(cell);
         }
+        container.appendChild(col);
+      }
+      randomizeReels();
+    }
 
-        const soundManager = new SoundManager();
+    function setImageWithFallback(img,s){
+      img.dataset.id = s.id;
+      img.alt = s.name;
+      const suffix = ASSET_SUFFIX;
+      img.src = s.file + suffix;
+      img.onerror = ()=>{ /* fallback to a colored block */ img.style.display='none'; };
+      img.style.display='block';
+    }
 
-        // Game State
-        const gameState = { balance: 5000, bet: 10, multiplier: 1, isSpinning: false, lastWin: 0, totalWins: 0 };
-
-        // Symbols configuration
-        const SYMBOL_POOL = [
-            { id: 'ace', name: 'Ace', file: 'assets/cards/ace.svg', weight: 6, type: 'face' },
-            { id: 'king', name: 'King', file: 'assets/cards/king.svg', weight: 3, type: 'face' },
-            { id: 'queen', name: 'Queen', file: 'assets/cards/queen.svg', weight: 3, type: 'face' },
-            { id: 'jack', name: 'Jack', file: 'assets/cards/jack.svg', weight: 3, type: 'face' },
-            { id: 'speed', name: 'Speed', file: 'assets/cards/speed.svg', weight: 2, type: 'symbol' },
-            { id: 'diamond', name: 'Diamond', file: 'assets/cards/diamond.svg', weight: 2, type: 'symbol' },
-            { id: 'heart', name: 'Heart', file: 'assets/cards/heart.svg', weight: 2, type: 'symbol' },
-            { id: 'clubs', name: 'Clubs', file: 'assets/cards/clubs.svg', weight: 2, type: 'symbol' }
-        ];
-        const WILD = { id: 'wild', name: 'Wild', file: 'assets/cards/wild.svg', weight: 0.1, type: 'wild' };
-        const SCATTER = { id: 'scatter', name: 'Scatter', file: 'assets/cards/scatter-coin.svg', weight: 0.05, type: 'scatter' };
-        const REELS = 5; const ROWS = 4;
-
-        // helper: weighted random pick
-        function weightedPick() {
-            const pool = [];
-            SYMBOL_POOL.forEach(s => { for (let i=0;i<Math.max(1,Math.round(s.weight*10));i++) pool.push(s); });
-            // add rare wild/scatter entries
-            for (let i=0;i<Math.max(1,Math.round(WILD.weight*100));i++) pool.push(WILD);
-            for (let i=0;i<Math.max(1,Math.round(SCATTER.weight*100));i++) pool.push(SCATTER);
-            return pool[Math.floor(Math.random()*pool.length)];
+    function randomizeReels(){
+      for(let c=0;c<REELS;c++){
+        for(let r=0;r<ROWS;r++){
+          const el=document.getElementById(`symbol-${c}-${r}`);
+          if(!el) continue;
+          const img = el.querySelector('img');
+          const s = weightedPick();
+          el.classList.remove('wild','scatter','winning');
+          if(s.type==='wild') el.classList.add('wild');
+          if(s.type==='scatter') el.classList.add('scatter');
+          setImageWithFallback(img, s);
         }
+      }
+    }
 
-        // Initialize reels
-        function initReels() {
-            const reelsDiv = document.getElementById('reels');
-            reelsDiv.innerHTML = '';
-            for (let col = 0; col < REELS; col++) {
-                const reel = document.createElement('div'); reel.className = 'reel'; reel.id = `reel-${col}`;
-                for (let row = 0; row < ROWS; row++) {
-                    const symbol = document.createElement('div'); symbol.className = 'reel-symbol'; symbol.id = `symbol-${col}-${row}`;
-                    const img = document.createElement('img'); img.className = 'card-image'; img.alt = '';
-                    symbol.appendChild(img);
-                    reel.appendChild(symbol);
-                }
-                reelsDiv.appendChild(reel);
-            }
-            randomizeReels();
+    function getSymbolIdAt(c,r){ const img=document.querySelector(`#symbol-${c}-${r} img`); return img&&img.dataset?img.dataset.id:null; }
+
+    function updateUI(){
+      document.getElementById('balance').textContent = gameState.balance;
+      document.getElementById('lastWin').textContent = gameState.lastWin;
+      document.getElementById('totalWins').textContent = gameState.totalWins;
+      document.getElementById('betDisplay').textContent = gameState.bet;
+      document.getElementById('betAmount').textContent = gameState.bet;
+      document.getElementById('autoBtn').textContent = `🔁 Auto: ${gameState.auto? 'On' : 'Off'}`;
+    }
+
+    // --- Accessibility announcement ---
+    function announce(text){ const sr=document.getElementById('srAnnounce'); sr.textContent=''; setTimeout(()=>sr.textContent=text,50); }
+
+    // --- Sound manager minimal ---
+    let audioCtx=null; function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+    function beep(freq=600,dur=0.08,vol=0.2){ if(!audioCtx) return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='sine'; o.frequency.value=freq; g.gain.value=vol; o.connect(g); g.connect(audioCtx.destination); o.start(); setTimeout(()=>{ o.stop(); g.disconnect(); }, dur*1000); }
+
+    // --- Particle system (canvas) ---
+    const canvas = document.getElementById('coinLayer'); const ctx = canvas.getContext('2d'); let cw=0,ch=0; function resizeCanvas(){ cw = canvas.width = canvas.clientWidth; ch = canvas.height = canvas.clientHeight; }
+    window.addEventListener('resize', resizeCanvas);
+    const coinImg = new Image(); coinImg.src = 'assets/cards/scatter-coin.svg' + ASSET_SUFFIX;
+    const MAX_PARTICLES = 40; const particlePool=[]; const particles=[]; for(let i=0;i<MAX_PARTICLES;i++) particlePool.push({alive:false,x:0,y:0,vx:0,vy:0,rot:0,vr:0,alpha:1,size:24});
+    let particlesEnabled = (localStorage.getItem('particlesEnabled') !== 'false');
+    const toggleBtn = document.getElementById('particleToggle'); toggleBtn.textContent = `✨ Particles: ${particlesEnabled? 'On' : 'Off'}`;
+
+    function spawnCoin(x,y,force=1){ if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; if(!particlesEnabled) return; const p = particlePool.find(p=>!p.alive); if(!p) return; p.alive=true; p.x=x; p.y=y; p.vx=(Math.random()-0.5)*6*force; p.vy=-2 - Math.random()*6*force; p.rot=Math.random()*Math.PI; p.vr=(Math.random()-0.5)*0.2; p.alpha=1; p.size=16+Math.random()*18; particles.push(p); }
+    function emitRandomCoins(count=6){ for(let i=0;i<count;i++){ const rx = (0.2+Math.random()*0.6)*cw; const ry = ch*0.1 + Math.random()*ch*0.3; spawnCoin(rx,ry,1+Math.random()*0.6); } }
+    function updateParticles(dt){ for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.vy += 0.12 * dt; p.x += p.vx * dt * 8; p.y += p.vy * dt * 8; p.rot += p.vr * dt; p.alpha -= 0.01*dt; if(p.y>ch+50 || p.alpha<=0){ p.alive=false; particles.splice(i,1); particlePool.push(p); } } }
+    function drawParticles(){ ctx.clearRect(0,0,cw,ch); for(const p of particles){ ctx.save(); ctx.globalAlpha = Math.max(0,p.alpha); ctx.translate(p.x,p.y); ctx.rotate(p.rot); if(coinImg.complete) ctx.drawImage(coinImg,-p.size/2,-p.size/2,p.size,p.size); ctx.restore(); } }
+    let last = performance.now(); function tick(now){ const dt = Math.min(60, now - last) / 16.67; last = now; updateParticles(dt); drawParticles(); requestAnimationFrame(tick); }
+    resizeCanvas(); requestAnimationFrame(tick);
+    let bgEmitInterval = setInterval(()=>{ if(particlesEnabled) emitRandomCoins(4); }, 3000);
+    toggleBtn.addEventListener('click', ()=>{ particlesEnabled = !particlesEnabled; localStorage.setItem('particlesEnabled', particlesEnabled); toggleBtn.textContent = `✨ Particles: ${particlesEnabled? 'On' : 'Off'}`; });
+    function celebrateWin(){ emitRandomCoins(14); }
+
+    // --- Win detection ---
+    function checkWins(){
+      // Simple horizontal 3-in-row detection + scatter/wild counters
+      let totalWin=0;
+      const winners = new Set();
+      for(let r=0;r<ROWS;r++){
+        for(let c=0;c<=REELS-3;c++){
+          const ids = [getSymbolIdAt(c,r), getSymbolIdAt(c+1,r), getSymbolIdAt(c+2,r)];
+          if(!ids[0] || !ids[1] || !ids[2]) continue;
+          // treat wild as matching anything
+          if(ids.every(id=> id===ids[0] || id==='wild')){
+            // reward depends on symbol
+            const base = (ids[0]==='ace' || ids[1]==='ace')? 20 : 5;
+            totalWin += base * gameState.bet;
+            // mark elements
+            for(let k=0;k<3;k++) winners.add(`symbol-${c+k}-${r}`);
+          }
         }
+      }
+      // counts
+      let scatterCount=0, wildCount=0, aceCount=0;
+      for(let c=0;c<REELS;c++) for(let r=0;r<ROWS;r++){
+        const id = getSymbolIdAt(c,r);
+        if(!id) continue;
+        if(id==='scatter') scatterCount++;
+        if(id==='wild') wildCount++;
+        if(id==='ace') aceCount++;
+      }
+      if(scatterCount>=3){ const bonus = gameState.bet * 50; totalWin += bonus; announce(`Scatter bonus ${bonus}`); }
+      if(wildCount>=3){ const bonus = gameState.bet * 80; totalWin += bonus; announce(`Wild bonus ${bonus}`); }
+      if(aceCount>=5){ const bonus = gameState.bet * 200; totalWin += bonus; announce(`SUPER ACE! ${bonus}`); }
 
-        function getSymbolIdAt(col,row){ const img = document.querySelector(`#symbol-${col}-${row} img`); return img ? img.dataset.id : null; }
+      // apply winning class to elements
+      winners.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('winning'); });
+      return Math.floor(totalWin);
+    }
 
-        function getRandomSymbol() { return weightedPick(); }
+    // --- Spin logic ---
+    function wait(ms){ return new Promise(res=>setTimeout(res, ms)); }
 
-        function randomizeReels() {
-            for (let col=0; col<REELS; col++){
-                for (let row=0; row<ROWS; row++){
-                    const el = document.getElementById(`symbol-${col}-${row}`);
-                    const img = el.querySelector('img');
-                    const s = getRandomSymbol();
-                    img.src = s.file; img.alt = s.name; img.dataset.id = s.id;
-                    el.className = 'reel-symbol';
-                    if (s.type === 'wild') el.classList.add('wild'); else if (s.type === 'scatter') el.classList.add('scatter');
-                }
-            }
-        }
+    async function spin(isTurbo=false){
+      if(gameState.isSpinning) return; // avoid concurrent
+      if(gameState.bet > gameState.balance){ announce('Insufficient balance'); return; }
+      gameState.isSpinning = true;
+      const actualBet = gameState.bet;
+      gameState.balance -= actualBet;
+      updateUI();
+      announce(`Spinning bet ${actualBet}`);
+      safeLog('spin_start',{bet:actualBet, balance:gameState.balance});
 
-        function showMessage(text){ const msg=document.createElement('div'); msg.className='message'; msg.textContent=text; document.body.appendChild(msg); setTimeout(()=>msg.remove(),2500); }
+      // play spin sound
+      soundSpin(isTurbo);
 
-        function checkWins(){
-            let totalWin = 0; const winningSymbols = new Set();
-            for (let row=0; row<ROWS; row++){
-                for (let col=0; col<REELS-2; col++){
-                    const sym1 = getSymbolIdAt(col,row);
-                    const sym2 = getSymbolIdAt(col+1,row);
-                    const sym3 = getSymbolIdAt(col+2,row);
-                    if (!sym1 || !sym2 || !sym3) continue;
-                    if (sym1 === sym2 && sym2 === sym3){
-                        let matchLength = 3; let payout = 1;
-                        // extend match forward while equal to sym1
-                        for (let k = col+3; k < REELS; k++){
-                            const next = getSymbolIdAt(k,row);
-                            if (next === sym1) {
-                                matchLength++;
-                                if (matchLength === 4) payout = 2;
-                                if (matchLength === 5) payout = 3;
-                            } else break;
-                        }
-                        if (sym1 === 'ace') payout *= 2.5;
-                        if (sym1 === WILD.id) payout *= 2.5;
-                        if (sym1 === SCATTER.id) payout *= 2;
-                        const baseWin = gameState.bet * (25 + matchLength * 10);
-                        totalWin += baseWin * payout * gameState.multiplier;
-                        for (let i = col; i < col + matchLength; i++) winningSymbols.add(`symbol-${i}-${row}`);
-                    }
-                }
-            }
-            // highlight winners
-            winningSymbols.forEach(id => { const el = document.getElementById(id); if(el) el.classList.add('winning'); });
-            // bonus counts
-            let scatterCount=0, wildCount=0, aceCount=0;
-            for (let col=0; col<REELS; col++) for (let row=0; row<ROWS; row++){ const s = getSymbolIdAt(col,row); if (s===SCATTER.id) scatterCount++; if (s===WILD.id) wildCount++; if (s==='ace') aceCount++; }
-            if (scatterCount>=3){ const bonus = gameState.bet * 100; totalWin += bonus; soundManager.bonusSound(); showMessage(`💥 SCATTER BONUS! +${bonus}`); }
-            if (wildCount>=3){ const bonus = gameState.bet * 150; totalWin += bonus; soundManager.bonusSound(); showMessage(`🌟 WILD BONUS! +${bonus}`); }
-            if (aceCount>=5){ const bonus = gameState.bet * 200; totalWin += bonus; soundManager.jackpotSound(); showMessage(`🎰 SUPER ACE! +${bonus}`); }
-            return totalWin;
-        }
+      // simple animation: cycle random symbols for duration, stop reels staggered
+      const spinDuration = isTurbo? 500 : 1400; // total length
+      const reelStopDelays = [0, 120, 260, 400, 540];
+      // start cycling
+      const start = performance.now();
+      const endTimes = reelStopDelays.map(d => start + spinDuration + d);
 
-        async function spin(isTurbo=false){
-            if (gameState.isSpinning) return;
-            await soundManager.resumeIfNeeded();
-            const actualBet = gameState.bet * gameState.multiplier;
-            if (gameState.balance < actualBet){ showMessage('❌ INSUFFICIENT BALANCE'); return; }
-            gameState.isSpinning = true; gameState.balance -= actualBet; updateUI(); soundManager.spinSound();
-            document.getElementById('spinBtn').disabled = true; document.getElementById('turboBtn').disabled = true; document.getElementById('decreaseBet').disabled = true; document.getElementById('increaseBet').disabled = true;
-            const duration = isTurbo ? 600 : 1500; const iterations = isTurbo ? 4 : 12; const perIteration = duration / iterations;
-            for (let i=0;i<iterations;i++){ const allSymbols = document.querySelectorAll('.reel-symbol'); allSymbols.forEach(s=>s.classList.add('spinning')); randomizeReels(); await new Promise(r=>setTimeout(r, perIteration)); allSymbols.forEach(s=>s.classList.remove('spinning')); }
-            randomizeReels(); await new Promise(r=>setTimeout(r,300));
-            const win = checkWins();
-            if (win>0){ gameState.balance += win; gameState.lastWin = win; gameState.totalWins++; soundManager.winSound(); showMessage(`🎊 WIN! +${win} COINS! 🎊`); logEvent(analytics,'spin_win',{ multiplier: gameState.multiplier, bet: gameState.bet }); }
-            else { gameState.lastWin = 0; soundManager.playBeep(300,200,0.15); showMessage('Try Again!'); logEvent(analytics,'spin_loss',{ bet: gameState.bet }); }
-            updateUI(); gameState.isSpinning = false; document.getElementById('spinBtn').disabled = false; document.getElementById('turboBtn').disabled = false; document.getElementById('decreaseBet').disabled = false; document.getElementById('increaseBet').disabled = false; logEvent(analytics,'spin',{ turbo: isTurbo, multiplier: gameState.multiplier, bet: gameState.bet });
-        }
+      // for each reel, cycle images until its end time
+      const cyclePromises = [];
+      for(let c=0;c<REELS;c++){
+        cyclePromises.push((async ()=>{
+          const elCol = document.getElementById(`reel-${c}`);
+          const imgEls = Array.from(elCol.querySelectorAll('img'));
+          while(performance.now() < endTimes[c]){
+            // replace each cell with a random symbol
+            for(const img of imgEls){ const s = weightedPick(); setImageWithFallback(img,s); const parent = img.parentElement; parent.classList.toggle('wild', s.type==='wild'); parent.classList.toggle('scatter', s.type==='scatter'); }
+            await wait(60); // frame
+          }
+          // finalise reel with random symbols (could be weighted differently)
+          for(const img of imgEls){ const s = weightedPick(); setImageWithFallback(img,s); const parent = img.parentElement; parent.classList.toggle('wild', s.type==='wild'); parent.classList.toggle('scatter', s.type==='scatter'); parent.classList.remove('winning'); }
+        })());
+      }
 
-        function updateUI(){ document.getElementById('balance').textContent = gameState.balance; document.getElementById('betAmount').textContent = gameState.bet; document.getElementById('multiplier').textContent = gameState.multiplier; document.getElementById('lastWin').textContent = gameState.lastWin; document.getElementById('totalWins').textContent = gameState.totalWins; }
+      await Promise.all(cyclePromises);
 
-        function increaseBet(){ if (gameState.bet < 1000){ gameState.bet += 10; gameState.multiplier = Math.floor(gameState.bet/10); soundManager.clickSound(); updateUI(); logEvent(analytics,'bet_increase',{ new_bet: gameState.bet }); } }
-        function decreaseBet(){ if (gameState.bet > 10){ gameState.bet -= 10; gameState.multiplier = Math.floor(gameState.bet/10); soundManager.clickSound(); updateUI(); logEvent(analytics,'bet_decrease',{ new_bet: gameState.bet }); } }
-        function toggleSound(){ const enabled = soundManager.toggleSound(); const btn = document.getElementById('soundToggle'); if (enabled){ btn.textContent='🔊 SOUND ON'; btn.classList.remove('muted'); soundManager.playBeep(800,100,0.3); btn.setAttribute('aria-pressed','false'); } else { btn.textContent='🔇 SOUND OFF'; btn.classList.add('muted'); btn.setAttribute('aria-pressed','true'); } }
+      // determine wins
+      const win = checkWins();
+      gameState.lastWin = win;
+      if(win>0){ gameState.balance += win; gameState.totalWins += win; celebrateWin(); beep(880,0.12,0.2); announce(`You won ${win}`); safeLog('spin_win',{bet:actualBet, win}); }
+      else { announce('No win'); safeLog('spin_loss',{bet:actualBet}); }
 
-        document.getElementById('spinBtn').addEventListener('click',()=>spin(false));
-        document.getElementById('turboBtn').addEventListener('click',()=>spin(true));
-        document.getElementById('increaseBet').addEventListener('click',increaseBet);
-        document.getElementById('decreaseBet').addEventListener('click',decreaseBet);
-        document.getElementById('soundToggle').addEventListener('click',toggleSound);
+      updateUI();
+      gameState.isSpinning = false;
 
-        initReels(); updateUI(); logEvent(analytics,'game_start',{ });
-        window.addEventListener('beforeunload',()=>{ /* avoid unreliable logging on unload */ });
-    </script>
+      // auto-spin
+      if(gameState.auto && gameState.balance >= gameState.bet){ await wait(300); spin(isTurbo); }
+    }
+
+    function soundSpin(isTurbo){ try{ ensureAudio(); for(let i=0;i<4;i++) setTimeout(()=>beep(360 + i*40, 0.06, 0.06), i * (isTurbo?30:80)); }catch(e){} }
+
+    // --- UI bindings ---
+    document.getElementById('spinBtn').addEventListener('click',()=>spin(false));
+    document.getElementById('turboBtn').addEventListener('click',()=>spin(true));
+    document.getElementById('particleToggle').addEventListener('click',()=>{ particlesEnabled = !particlesEnabled; localStorage.setItem('particlesEnabled', particlesEnabled); toggleBtn.textContent = `✨ Particles: ${particlesEnabled? 'On' : 'Off'}`; });
+
+    document.getElementById('betInc').addEventListener('click',()=>{ gameState.bet = Math.min(gameState.balance, Math.max(1, gameState.bet * 2)); updateUI(); });
+    document.getElementById('betDec').addEventListener('click',()=>{ gameState.bet = Math.max(1, Math.floor(gameState.bet/2)); updateUI(); });
+
+    document.getElementById('autoBtn').addEventListener('click',()=>{ gameState.auto = !gameState.auto; updateUI(); if(gameState.auto && !gameState.isSpinning){ spin(false); } });
+
+    // init
+    initReels(); updateUI(); safeLog('game_start',{balance:gameState.balance});
+  </script>
 </body>
 </html>
