@@ -4,11 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>JILI SUPER ACE</title>
+  <!-- Preload important assets -->
+  <link rel="preload" href="/assets/cards/scatter-coin.svg" as="image" type="image/svg+xml">
+  <link rel="preload" href="/assets/cards/ace.svg" as="image" type="image/svg+xml">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#0d0221,#1a0033);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-    .game{width:920px;max-width:100%;background:linear-gradient(180deg,#1a0033,#0d0221);border:4px solid #ffd700;padding:18px;border-radius:16px}
-    .header{text-align:center;color:#ffd700;margin-bottom:12px}
+    .game{width:920px;max-width:100%;background:linear-gradient(180deg,#1a0033,#0d0221);border:4px solid #ffd700;padding:18px;border-radius:16px;position:relative;overflow:hidden}
+    .header{text-align:center;color:#ffd700;margin-bottom:12px;z-index:40;position:relative}
+    .reels-wrap{position:relative;z-index:10}
     .reels{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;background:rgba(0,0,0,0.05);padding:12px;border-radius:12px}
     .reel{display:flex;flex-direction:column;gap:8px}
     .cell{aspect-ratio:3/4;background:linear-gradient(135deg,#2a1a52,#1a0a32);border:2px solid #ff6600;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:#fff;text-shadow:0 0 8px rgba(255,215,0,0.6);overflow:hidden}
@@ -17,15 +21,33 @@
     .cell.scatter{box-shadow:0 0 20px #ffaa00}
     .cell.winning{animation:glow .6s ease-in-out infinite;border-color:#ffff00}
     @keyframes glow{0%{filter:drop-shadow(0 0 8px #ffd700)}50%{filter:drop-shadow(0 0 28px #ffd700)}100%{filter:drop-shadow(0 0 8px #ffd700)}}
-    .controls{display:flex;gap:10px;justify-content:center;margin-top:12px}
+
+    /* Particle canvas sits above reels but below header controls; pointer-events disabled so it doesn't block clicks */
+    #coinLayer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:20}
+
+    .controls{display:flex;gap:10px;justify-content:center;margin-top:12px;z-index:40;position:relative}
     button{padding:12px 18px;border-radius:10px;border:0;background:#ff6600;color:#fff;font-weight:700;cursor:pointer}
     .stats{display:flex;gap:12px;justify-content:center;margin-bottom:12px}
     .stat{background:rgba(255,215,0,0.06);padding:8px 12px;border-radius:8px;color:#ffd700}
+
+    /* motion preference: disable particle animations for reduced motion */
+    @media (prefers-reduced-motion: reduce) { #coinLayer{display:none} }
+
+    /* small screens */
+    @media (max-width:600px){.game{padding:12px}.cell{font-size:1.2rem}}
+
+    /* Accessible live region (hidden visually) */
+    .sr-only{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
   </style>
 </head>
 <body>
   <div class="game" role="application">
-    <div class="header"><h1>🎰 JILI SUPER ACE</h1><div style="color:#ffb366">Image mode</div></div>
+    <canvas id="coinLayer" aria-hidden="true"></canvas>
+
+    <div class="header">
+      <h1>🎰 JILI SUPER ACE</h1>
+      <div style="color:#ffb366">Polished particle effects & accessibility</div>
+    </div>
 
     <div class="stats" aria-live="polite">
       <div class="stat">Balance: <span id="balance">5000</span></div>
@@ -33,191 +55,129 @@
       <div class="stat">Total Wins: <span id="totalWins">0</span></div>
     </div>
 
-    <div class="reels" id="reels" aria-hidden="false"></div>
+    <div class="reels-wrap">
+      <div class="reels" id="reels" aria-hidden="false"></div>
+    </div>
 
     <div class="controls">
       <button id="spinBtn">🎯 SPIN</button>
       <button id="turboBtn">⚡ TURBO</button>
-      <button id="toggleSound">🔊 SOUND</button>
+      <button id="particleToggle">✨ Particles: On</button>
     </div>
+
+    <div class="sr-only" aria-live="assertive" id="srAnnounce"></div>
   </div>
 
   <script type="module">
-    // Only import firebase-app synchronously; analytics is loaded dynamically to avoid blocking the app
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDndzhlq7tIR03UZroax1iE59RXF27I4Z8",
-      authDomain: "jili-c6b1a.firebaseapp.com",
-      projectId: "jili-c6b1a",
-      storageBucket: "jili-c6b1a.firebasestorage.app",
-      messagingSenderId: "665157239109",
-      appId: "1:665157239109:web:758500e566830c29b57e2c",
-      measurementId: "G-YSZYWY42QB"
-    };
-
+    // Minimal safe analytics load (non-blocking)
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js';
+    const firebaseConfig = { apiKey: "AIzaSyDndzhlq7tIR03UZroax1iE59RXF27I4Z8", authDomain: "jili-c6b1a.firebaseapp.com", projectId: "jili-c6b1a", storageBucket: "jili-c6b1a.firebasestorage.app", messagingSenderId: "665157239109", appId: "1:665157239109:web:758500e566830c29b57e2c", measurementId: "G-YSZYWY42QB" };
     const app = initializeApp(firebaseConfig);
-    let analyticsMod = null;
-    let analytics = null;
-    (async () => {
-      try {
-        analyticsMod = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js');
-        analytics = analyticsMod.getAnalytics(app);
-      } catch (e) {
-        console.warn('Firebase analytics not available:', e);
-        analyticsMod = null; analytics = null;
-      }
-    })();
+    let analyticsMod=null, analytics=null;
+    (async()=>{ try{ analyticsMod = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js'); analytics = analyticsMod.getAnalytics(app);}catch(e){console.warn('analytics unavailable',e)} })();
+    function safeLog(name, params={}){ try{ if(analyticsMod && analytics) analyticsMod.logEvent(analytics, name, params);}catch(e){} }
 
-    function safeLog(eventName, params = {}){
-      try{ if(analyticsMod && analytics){ analyticsMod.logEvent(analytics, eventName, params); } }catch(e){}
-    }
-
-    // Sound manager
-    class SoundManager {
-      constructor(){ this.audioContext = null; this.enabled = true; }
-      init(){ if(!this.audioContext) this.audioContext = new (window.AudioContext||window.webkitAudioContext)(); }
-      async resumeIfNeeded(){ try{ this.init(); if(this.audioContext.state==='suspended') await this.audioContext.resume(); }catch(e){} }
-      playBeep(freq=600,dur=0.08,vol=0.2){ if(!this.audioContext || !this.enabled) return; const o=this.audioContext.createOscillator(); const g=this.audioContext.createGain(); o.type='sine'; o.frequency.value=freq; g.gain.value=vol; o.connect(g); g.connect(this.audioContext.destination); o.start(); o.stop(this.audioContext.currentTime+dur); setTimeout(()=>{try{o.disconnect();g.disconnect()}catch(e){}},(dur+0.05)*1000); }
-      spinSound(){ for(let i=0;i<6;i++) setTimeout(()=>this.playBeep(400+i*80,0.06,0.12), i*40); }
-      winSound(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.playBeep(f,0.14,0.35), i*120)); }
-      jackpotSound(){ [800,1000,1200,1400,1600,1400,1200,1000].forEach((f,i)=>setTimeout(()=>this.playBeep(f,0.09,0.25), i*90)); }
-      toggle(){ this.enabled = !this.enabled; return this.enabled; }
-    }
-
-    const soundManager = new SoundManager();
-
-    // Symbols mapped to image files
+    // --- Game + reels (kept from previous) ---
     const SYMBOL_POOL = [
       {id:'ace', name:'Ace', file:'assets/cards/ace.svg', weight:6, type:'face'},
       {id:'king',name:'King', file:'assets/cards/king.svg', weight:3, type:'face'},
       {id:'queen',name:'Queen', file:'assets/cards/queen.svg', weight:3, type:'face'},
       {id:'jack',name:'Jack', file:'assets/cards/jack.svg', weight:3, type:'face'},
-      {id:'speed',name:'Speed', file:'assets/cards/speed.svg', weight:2, type:'symbol'},
+      {id:'spade',name:'Spade', file:'assets/cards/speed.svg', weight:2, type:'symbol'},
       {id:'diamond',name:'Diamond', file:'assets/cards/diamond.svg', weight:2, type:'symbol'},
       {id:'heart',name:'Heart', file:'assets/cards/heart.svg', weight:2, type:'symbol'},
       {id:'clubs',name:'Clubs', file:'assets/cards/clubs.svg', weight:2, type:'symbol'}
     ];
     const WILD = {id:'wild', name:'Wild', file:'assets/cards/wild.svg', weight:0.1, type:'wild'};
     const SCATTER = {id:'scatter', name:'Scatter', file:'assets/cards/scatter-coin.svg', weight:0.05, type:'scatter'};
+    const REELS=5, ROWS=4;
 
-    const REELS = 5, ROWS = 4;
+    function buildWeightedPool(){ const pool=[]; SYMBOL_POOL.forEach(s=>{ const n=Math.max(1,Math.round(s.weight*10)); for(let i=0;i<n;i++) pool.push(s); }); const wc=Math.max(1,Math.round(WILD.weight*100)); for(let i=0;i<wc;i++) pool.push(WILD); const sc=Math.max(1,Math.round(SCATTER.weight*100)); for(let i=0;i<sc;i++) pool.push(SCATTER); return pool; }
+    const WEIGHTED = buildWeightedPool(); function weightedPick(){ return WEIGHTED[Math.floor(Math.random()*WEIGHTED.length)]; }
 
-    function buildWeightedPool(){ const pool = []; SYMBOL_POOL.forEach(s=>{ const count = Math.max(1, Math.round(s.weight*10)); for(let i=0;i<count;i++) pool.push(s); }); const wildCount = Math.max(1, Math.round(WILD.weight*100)); for(let i=0;i<wildCount;i++) pool.push(WILD); const scatterCount = Math.max(1, Math.round(SCATTER.weight*100)); for(let i=0;i<scatterCount;i++) pool.push(SCATTER); return pool; }
-    const WEIGHTED_POOL = buildWeightedPool();
-    function weightedPick(){ return WEIGHTED_POOL[Math.floor(Math.random()*WEIGHTED_POOL.length)]; }
-
-    // Game state
     const gameState = { balance:5000, bet:10, multiplier:1, isSpinning:false, lastWin:0, totalWins:0 };
 
-    // Init DOM reels
-    function initReels(){ const container = document.getElementById('reels'); container.innerHTML='';
-      for(let c=0;c<REELS;c++){ const col = document.createElement('div'); col.className='reel'; col.id=`reel-${c}`;
-        for(let r=0;r<ROWS;r++){ const cell = document.createElement('div'); cell.className='cell'; cell.id=`symbol-${c}-${r}`; const img = document.createElement('img'); img.className='card-image'; img.alt=''; cell.appendChild(img); col.appendChild(cell); }
+    function initReels(){ const container=document.getElementById('reels'); container.innerHTML='';
+      for(let c=0;c<REELS;c++){ const col=document.createElement('div'); col.className='reel'; col.id=`reel-${c}`;
+        for(let r=0;r<ROWS;r++){ const cell=document.createElement('div'); cell.className='cell'; cell.id=`symbol-${c}-${r}`; const img=document.createElement('img'); img.className='card-image'; img.alt=''; cell.appendChild(img); col.appendChild(cell); }
         container.appendChild(col);
       }
       randomizeReels();
     }
 
-    function getSymbolIdAt(c,r){ const img = document.querySelector(`#symbol-${c}-${r} img`); return img && img.dataset ? img.dataset.id : null; }
+    function setImageWithFallback(img,s){ img.dataset.id=s.id; img.alt=s.name; img.src=s.file; img.onload=()=>{}; img.onerror=()=>{ const parent=img.parentElement; parent.innerHTML=''; parent.textContent=s.name[0]||'?'; parent.style.fontSize='1.6rem'; parent.classList.remove('wild','scatter'); } }
 
-    function setImageWithFallback(img, s){ img.dataset.id = s.id; img.alt = s.name; img.src = s.file;
-      img.onload = () => { /* loaded */ };
-      img.onerror = () => {
-        console.warn('Image failed to load', s.file);
-        // use inline placeholder and annotate parent
-        const parent = img.parentElement;
-        parent.classList.remove('wild','scatter');
-        parent.textContent = s.name[0] || '?';
-        parent.style.fontSize = '2rem';
-      };
-    }
+    function randomizeReels(){ for(let c=0;c<REELS;c++) for(let r=0;r<ROWS;r++){ const el=document.getElementById(`symbol-${c}-${r}`); if(!el) continue; let img=el.querySelector('img'); if(!img){ el.innerHTML=''; img=document.createElement('img'); img.className='card-image'; el.appendChild(img);} const s=weightedPick(); el.className='cell'; if(s.type==='wild') el.classList.add('wild'); if(s.type==='scatter') el.classList.add('scatter'); setImageWithFallback(img,s); } }
 
-    function randomizeReels(){
-      for(let c=0;c<REELS;c++){
-        for(let r=0;r<ROWS;r++){
-          const el = document.getElementById(`symbol-${c}-${r}`);
-          if(!el) continue;
-          // ensure the cell contains an img (fallback may have removed it)
-          let img = el.querySelector('img');
-          if(!img){ el.innerHTML = ''; img = document.createElement('img'); img.className='card-image'; el.appendChild(img); }
-          const s = weightedPick();
-          el.className = 'cell';
-          if(s.type==='wild') el.classList.add('wild'); else if(s.type==='scatter') el.classList.add('scatter');
-          setImageWithFallback(img, s);
-        }
-      }
-    }
+    function getSymbolIdAt(c,r){ const img=document.querySelector(`#symbol-${c}-${r} img`); return img&&img.dataset?img.dataset.id:null; }
 
-    function showMessage(text){ alert(text); }
+    function updateUI(){ document.getElementById('balance').textContent=gameState.balance; document.getElementById('lastWin').textContent=gameState.lastWin; document.getElementById('totalWins').textContent=gameState.totalWins; }
 
-    function checkWins(){
-      let totalWin = 0; const winners = new Set();
-      for(let r=0;r<ROWS;r++){
-        for(let c=0;c<REELS-2;c++){
-          const s1 = getSymbolIdAt(c,r); const s2 = getSymbolIdAt(c+1,r); const s3 = getSymbolIdAt(c+2,r);
-          if(!s1||!s2||!s3) continue;
-          if(s1===s2 && s2===s3){
-            let matchLength = 3; let payout = 1;
-            for(let k=c+3;k<REELS;k++){ const next = getSymbolIdAt(k,r); if(next===s1) { matchLength++; if(matchLength===4) payout=2; if(matchLength===5) payout=3; } else break; }
-            if(s1==='ace') payout *= 2.5; if(s1===WILD.id) payout *= 2.5; if(s1===SCATTER.id) payout *= 2;
-            const baseWin = gameState.bet * (25 + matchLength * 10);
-            totalWin += baseWin * payout * gameState.multiplier;
-            for(let i=c;i<c+matchLength;i++) winners.add(`symbol-${i}-${r}`);
-          }
-        }
-      }
-      winners.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('winning'); });
+    // --- Accessibility announcement ---
+    function announce(text){ const sr=document.getElementById('srAnnounce'); sr.textContent=''; setTimeout(()=>sr.textContent=text,50); }
 
-      // bonus counts
-      let scatterCount=0, wildCount=0, aceCount=0;
-      for(let c=0;c<REELS;c++) for(let r=0;r<ROWS;r++){ const id = getSymbolIdAt(c,r); if(id===SCATTER.id) scatterCount++; if(id===WILD.id) wildCount++; if(id==='ace') aceCount++; }
-      if(scatterCount>=3){ const bonus = gameState.bet * 100; totalWin += bonus; soundManager.jackpotSound(); showMessage(`💥 SCATTER BONUS! +${bonus}`); }
-      if(wildCount>=3){ const bonus = gameState.bet * 150; totalWin += bonus; soundManager.bonusSound(); showMessage(`🌟 WILD BONUS! +${bonus}`); }
-      if(aceCount>=5){ const bonus = gameState.bet * 200; totalWin += bonus; soundManager.jackpotSound(); showMessage(`🎰 SUPER ACE! +${bonus}`); }
+    // --- Sound manager minimal ---
+    let audioCtx=null; function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+    function beep(freq=600,dur=0.08,vol=0.2){ if(!audioCtx) return; const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='sine'; o.frequency.value=freq; g.gain.value=vol; o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+dur); setTimeout(()=>{try{o.disconnect();g.disconnect()}catch(e){}},(dur+0.05)*1000); }
 
-      return Math.floor(totalWin);
-    }
+    // --- Particle system (canvas), pooled, performant ---
+    const canvas = document.getElementById('coinLayer'); const ctx = canvas.getContext('2d'); let cw=0,ch=0; function resizeCanvas(){ cw = canvas.width = canvas.clientWidth; ch = canvas.height = canvas.clientHeight; }
+    window.addEventListener('resize', resizeCanvas);
 
-    async function spin(isTurbo=false){
-      if(gameState.isSpinning) return;
-      await soundManager.resumeIfNeeded();
-      const actualBet = gameState.bet * gameState.multiplier;
-      if(gameState.balance < actualBet){ showMessage('❌ INSUFFICIENT BALANCE'); return; }
-      gameState.isSpinning = true; gameState.balance -= actualBet; updateUI(); soundManager.spinSound();
-      document.getElementById('spinBtn').disabled = true; document.getElementById('turboBtn').disabled = true;
+    // load coin image (scatter) and small coin sprite for particles
+    const coinImg = new Image(); coinImg.src = '/assets/cards/scatter-coin.svg';
 
-      const duration = isTurbo ? 600 : 1500; const iterations = isTurbo ? 4 : 12; const per = Math.max(40, Math.floor(duration/iterations));
-      for(let i=0;i<iterations;i++){
-        document.querySelectorAll('.cell').forEach(c=>c.classList.add('spinning'));
-        randomizeReels();
-        await new Promise(r=>setTimeout(r, per));
-        document.querySelectorAll('.cell').forEach(c=>c.classList.remove('spinning'));
-      }
+    const MAX_PARTICLES = 40; const particles = []; let particlePool=[]; for(let i=0;i<MAX_PARTICLES;i++) particlePool.push({alive:false,x:0,y:0,vx:0,vy:0,rot:0,vr:0,alpha:1,size:32});
 
-      randomizeReels(); await new Promise(r=>setTimeout(r, 260));
-      const win = checkWins();
-      if(win>0){ gameState.balance += win; gameState.lastWin = win; gameState.totalWins++; soundManager.winSound(); showMessage(`🎊 WIN! +${win} COINS! 🎊`); safeLog('spin_win', {win_amount: win, balance: gameState.balance, multiplier: gameState.multiplier, bet: gameState.bet}); }
-      else { gameState.lastWin = 0; soundManager.playBeep(300,0.2,0.15); showMessage('Try Again!'); safeLog('spin_loss', {balance: gameState.balance, bet: gameState.bet}); }
+    let particlesEnabled = (localStorage.getItem('particlesEnabled') !== 'false');
+    const toggleBtn = document.getElementById('particleToggle'); toggleBtn.textContent = `✨ Particles: ${particlesEnabled? 'On' : 'Off'}`;
 
-      updateUI(); gameState.isSpinning = false; document.getElementById('spinBtn').disabled = false; document.getElementById('turboBtn').disabled = false;
-      safeLog('spin', {turbo:isTurbo, multiplier:gameState.multiplier, bet:gameState.bet, balance:gameState.balance});
-    }
+    function spawnCoin(x,y,force=1){ if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; if(!particlesEnabled) return; const p = particlePool.find(p=>!p.alive); if(!p) return; p.alive=true; p.x=x; p.y=y; const angle = (Math.random()*Math.PI/2) - Math.PI/4; const speed = 2 + Math.random()*3; p.vx = Math.cos(angle)*speed*force; p.vy = -Math.abs(Math.sin(angle))* (2+ Math.random()*3) - (force*1.5); p.vr = (Math.random()-0.5)*0.2; p.rot = Math.random()*Math.PI*2; p.alpha=1; p.size = 18 + Math.random()*24; particles.push(p); }
 
-    function updateUI(){ document.getElementById('balance').textContent = gameState.balance; document.getElementById('lastWin').textContent = gameState.lastWin; document.getElementById('totalWins').textContent = gameState.totalWins; }
+    function emitRandomCoins(count=6){ for(let i=0;i<count;i++){ const rx = (0.2+Math.random()*0.6)*cw; const ry = ch*0.1 + Math.random()*ch*0.3; spawnCoin(rx,ry,1+Math.random()*0.6); } }
 
-    function increaseBet(){ if(gameState.bet < 1000){ gameState.bet += 10; gameState.multiplier = Math.floor(gameState.bet/10); soundManager.playBeep(700,0.06,0.12); updateUI(); safeLog('bet_increase',{new_bet:gameState.bet}); } }
-    function decreaseBet(){ if(gameState.bet > 10){ gameState.bet -= 10; gameState.multiplier = Math.floor(gameState.bet/10); soundManager.playBeep(500,0.06,0.12); updateUI(); safeLog('bet_decrease',{new_bet:gameState.bet}); } }
+    function updateParticles(dt){ for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; if(!p.alive){ particles.splice(i,1); continue; } p.vy += 0.12 * dt; p.x += p.vx * dt * 15; p.y += p.vy * dt * 15; p.rot += p.vr * dt * 60; p.alpha -= 0.01 * dt; if(p.y > ch + 50 || p.alpha <= 0){ p.alive=false; particlePool.push(p); particles.splice(i,1); } } }
 
-    async function toggleSound(){ const enabled = soundManager.toggle(); const btn = document.getElementById('toggleSound'); btn.textContent = enabled? '🔊 SOUND' : '🔇 MUTE'; await soundManager.resumeIfNeeded(); if(enabled) soundManager.playBeep(800,0.08,0.2); }
+    function drawParticles(){ ctx.clearRect(0,0,cw,ch); for(const p of particles){ ctx.save(); ctx.globalAlpha = Math.max(0,p.alpha); ctx.translate(p.x,p.y); ctx.rotate(p.rot); const s = p.size; if(coinImg.complete){ ctx.drawImage(coinImg, -s/2, -s/2, s, s); } else { ctx.fillStyle='#ffd34d'; ctx.beginPath(); ctx.arc(0,0,s/2,0,Math.PI*2); ctx.fill(); }
+        ctx.restore(); } }
 
-    document.getElementById('spinBtn').addEventListener('click', ()=> spin(false));
-    document.getElementById('turboBtn').addEventListener('click', ()=> spin(true));
-    document.getElementById('toggleSound').addEventListener('click', ()=> toggleSound());
+    let last = performance.now(); function tick(now){ const dt = Math.min(60, now - last) / 16.67; last = now; updateParticles(dt); drawParticles(); requestAnimationFrame(tick); }
 
-    // Init
-    initReels(); updateUI(); safeLog('game_start', {starting_balance: gameState.balance});
-    window.addEventListener('beforeunload', ()=> safeLog('game_end', {final_balance: gameState.balance, total_wins: gameState.totalWins}));
+    // Start particle loop only if not reduced-motion
+    resizeCanvas(); requestAnimationFrame(tick);
+
+    // Periodic background coin emit to add life, but limited to avoid jank
+    let bgEmitInterval = setInterval(()=>{ if(particlesEnabled) emitRandomCoins(6); }, 2500);
+
+    toggleBtn.addEventListener('click', ()=>{ particlesEnabled = !particlesEnabled; localStorage.setItem('particlesEnabled', particlesEnabled); toggleBtn.textContent = `✨ Particles: ${particlesEnabled? 'On':'Off'}`; if(!particlesEnabled){ particles.length=0; ctx.clearRect(0,0,cw,ch); } });
+
+    // Spawn coins on big win
+    function celebrateWin(){ emitRandomCoins(18); }
+
+    // --- Win detection and spin logic (kept and improved) ---
+    function checkWins(){ let totalWin=0; const winners=new Set(); for(let r=0;r<ROWS;r++){ for(let c=0;c<REELS-2;c++){ const s1=getSymbolIdAt(c,r), s2=getSymbolIdAt(c+1,r), s3=getSymbolIdAt(c+2,r); if(!s1||!s2||!s3) continue; if(s1===s2 && s2===s3){ let matchLength=3, payout=1; for(let k=c+3;k<REELS;k++){ const next=getSymbolIdAt(k,r); if(next===s1){ matchLength++; if(matchLength===4) payout=2; if(matchLength===5) payout=3; } else break; } if(s1==='ace') payout *= 2.5; if(s1===WILD.id) payout *= 2.5; if(s1===SCATTER.id) payout *= 2; const baseWin = gameState.bet * (25 + matchLength * 10); totalWin += baseWin * payout * gameState.multiplier; for(let i=c;i<c+matchLength;i++) winners.add(`symbol-${i}-${r}`); } } }
+      winners.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('winning'); }); let scatterCount=0,wildCount=0,aceCount=0; for(let c=0;c<REELS;c++) for(let r=0;r<ROWS;r++){ const id=getSymbolIdAt(c,r); if(id===SCATTER.id) scatterCount++; if(id===WILD.id) wildCount++; if(id==='ace') aceCount++; }
+      if(scatterCount>=3){ const bonus = gameState.bet * 100; totalWin += bonus; celebrateWin(); announce(`Scatter bonus ${bonus}`); }
+      if(wildCount>=3){ const bonus = gameState.bet * 150; totalWin += bonus; celebrateWin(); announce(`Wild bonus ${bonus}`); }
+      if(aceCount>=5){ const bonus = gameState.bet * 200; totalWin += bonus; celebrateWin(); announce(`SUPER ACE! ${bonus}`); }
+      return Math.floor(totalWin); }
+
+    async function spin(isTurbo=false){ if(gameState.isSpinning) return; ensureAudio(); if(audioCtx.state==='suspended') try{ await audioCtx.resume(); }catch(e){} const actualBet = gameState.bet * gameState.multiplier; if(gameState.balance < actualBet){ announce('Insufficient balance'); alert('Insufficient balance'); return; } gameState.isSpinning=true; gameState.balance -= actualBet; updateUI(); soundManagerSpin(); document.getElementById('spinBtn').disabled=true; document.getElementById('turboBtn').disabled=true; const duration = isTurbo?600:1500; const iterations = isTurbo?4:12; const per = Math.max(40, Math.floor(duration/iterations)); for(let i=0;i<iterations;i++){ document.querySelectorAll('.cell').forEach(c=>c.classList.add('spinning')); randomizeReels(); await new Promise(r=>setTimeout(r, per)); document.querySelectorAll('.cell').forEach(c=>c.classList.remove('spinning')); } randomizeReels(); await new Promise(r=>setTimeout(r, 260)); const win = checkWins(); if(win>0){ gameState.balance += win; gameState.lastWin = win; gameState.totalWins++; beep(900,0.18,0.25); celebrateWin(); announce(`You won ${win} coins`); safeLog('spin_win',{win,balance:gameState.balance}); } else { gameState.lastWin=0; beep(300,0.12,0.12); announce('Try again'); safeLog('spin_loss',{balance:gameState.balance}); } updateUI(); gameState.isSpinning=false; document.getElementById('spinBtn').disabled=false; document.getElementById('turboBtn').disabled=false; safeLog('spin',{turbo:isTurbo,bet:gameState.bet}); }
+
+    // minimal spin sound wrapper
+    function soundManagerSpin(){ try{ ensureAudio(); for(let i=0;i<5;i++) setTimeout(()=>beep(420+ i*60,0.06,0.08), i*50); }catch(e){} }
+
+    // helpers
+    function getSymbolIdAt(c,r){ const img=document.querySelector(`#symbol-${c}-${r} img`); return img&&img.dataset?img.dataset.id:null; }
+
+    // Bind UI
+    document.getElementById('spinBtn').addEventListener('click',()=>spin(false));
+    document.getElementById('turboBtn').addEventListener('click',()=>spin(true));
+    document.getElementById('particleToggle').addEventListener('click',()=>{ particlesEnabled = !particlesEnabled; localStorage.setItem('particlesEnabled', particlesEnabled); document.getElementById('particleToggle').textContent = `✨ Particles: ${particlesEnabled? 'On':'Off'}`; if(!particlesEnabled){ particles.length=0; ctx.clearRect(0,0,cw,ch); } });
+
+    // init
+    initReels(); updateUI(); safeLog('game_start',{balance:gameState.balance});
+
   </script>
 </body>
 </html>
