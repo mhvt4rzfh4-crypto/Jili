@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jili Super Ace - Slot Machine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0d0221 0%, #1a0033 50%, #0d0221 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .game-container {
+            background: linear-gradient(to bottom, #1a0033, #0d0221);
+            border: 4px solid #FFD700;
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 0 80px rgba(255, 215, 0, 0.8), inset 0 0 40px rgba(255, 215, 0, 0.2);
+            overflow-x: hidden;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #FFD700;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 1);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 3px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            font-size: 1em;
+            color: #FF6600;
+            text-shadow: 0 0 15px rgba(255, 102, 0, 1);
+        }
+
+        .header-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .sound-toggle {
+            background: linear-gradient(135deg, #4a4a4a, #2a2a2a);
+            border: 2px solid #FF6600;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .sound-toggle:hover {
+            box-shadow: 0 0 15px rgba(255, 102, 0, 0.8);
+            transform: scale(1.05);
+        }
+
+        .sound-toggle.muted {
+            background: linear-gradient(135deg, #8B0000, #660000);
+            border-color: #FFD700;
+        }
+
+        .stats-top {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat {
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #FF6600;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #FFD700;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.4em;
+            color: #FFD700;
+            font-weight: bold;
+            margin-top: 3px;
+        }
+
+        .bet-controls {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+            background: rgba(255, 102, 0, 0.1);
+            border: 2px solid #FF6600;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .bet-btn {
+            padding: 10px;
+            background: linear-gradient(135deg, #FF6600, #FFAA00);
+            border: 2px solid #FFD700;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.95em;
+        }
+
+        .bet-btn:hover {
+            box-shadow: 0 0 20px rgba(255, 102, 0, 1);
+            transform: scale(1.05);
+        }
+
+        .bet-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .bet-display {
+            text-align: center;
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 1.3em;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+
+        .reels-container {
+            background: linear-gradient(to bottom, #0a0015, #1a0033);
+            border: 4px solid #FFD700;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+
+        .reels {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .reel {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            perspective: 1000px;
+        }
+
+        .reel-symbol {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #2a1a52 0%, #1a0a32 100%);
+            border: 2px solid #FF6600;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+            transition: all 0.1s;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .reel-symbol.spinning {
+            animation: spin-reel 0.1s ease-in-out;
+        }
+
+        @keyframes spin-reel {
+            0%, 100% { transform: rotateY(0deg); }
+            50% { transform: rotateY(180deg); }
+        }
+
+        .reel-symbol.wild {
+            background: linear-gradient(135deg, #00FF88 0%, #00CC66 100%);
+            border-color: #00FF88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 1), inset 0 0 15px rgba(0, 255, 136, 0.4);
+            color: black;
+        }
+
+        .reel-symbol.scatter {
+            background: linear-gradient(135deg, #FFAA00 0%, #FF6600 100%);
+            border-color: #FFFF00;
+            box-shadow: 0 0 20px rgba(255, 170, 0, 1), inset 0 0 15px rgba(255, 255, 0, 0.3);
+        }
+
+        .reel-symbol.winning {
+            animation: pulse-glow 0.5s ease-in-out infinite !important;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 1), inset 0 0 20px rgba(255, 215, 0, 0.6) !important;
+            border-color: #FFFF00 !important;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+            50% { box-shadow: 0 0 40px rgba(255, 215, 0, 1); }
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #spinBtn {
+            background: linear-gradient(135deg, #FF0000, #CC0000);
+            color: white;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+            border: 3px solid #FFFF00;
+            font-size: 1.2em;
+        }
+
+        #spinBtn:hover:not(:disabled) {
+            box-shadow: 0 0 60px rgba(255, 0, 0, 1);
+            transform: scale(1.05);
+        }
+
+        #spinBtn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        #turboBtn {
+            background: linear-gradient(135deg, #FF6600, #FFAA00);
+            color: white;
+            box-shadow: 0 0 25px rgba(255, 102, 0, 0.8);
+            border: 3px solid #FFFF00;
+        }
+
+        #turboBtn:hover:not(:disabled) {
+            box-shadow: 0 0 50px rgba(255, 102, 0, 1);
+            transform: scale(1.05);
+        }
+
+        #turboBtn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #FFD700 0%, #FFED4E 100%);
+            border: 4px solid #FF6600;
+            border-radius: 25px;
+            padding: 40px 60px;
+            font-size: 2.5em;
+            font-weight: bold;
+            color: black;
+            text-shadow: 3px 3px 6px rgba(255, 102, 0, 0.8);
+            box-shadow: 0 0 80px rgba(255, 215, 0, 1);
+            animation: message-pop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        @keyframes message-pop {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(-20deg);
+                opacity: 0;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .info-message {
+            background: rgba(255, 102, 0, 0.2);
+            border: 2px solid #FF6600;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .reel-symbol {
+                font-size: 1.5em;
+            }
+
+            .stats-top {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            button {
+                padding: 12px;
+                font-size: 0.95em;
+            }
+
+            .header-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🎰 JILI SUPER ACE 🎰</h1>
+            <p>SLOT MACHINE</p>
+            <div class="header-controls">
+                <button class="sound-toggle" id="soundToggle">🔊 SOUND ON</button>
+            </div>
+        </div>
+
+        <div class="stats-top">
+            <div class="stat">
+                <div class="stat-label">Balance</div>
+                <div class="stat-value" id="balance">5000</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Win</div>
+                <div class="stat-value" id="lastWin">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Total Wins</div>
+                <div class="stat-value" id="totalWins">0</div>
+            </div>
+        </div>
+
+        <div class="bet-controls">
+            <button class="bet-btn" id="decreaseBet">➖ BET -</button>
+            <div class="bet-display">Bet: <span id="betAmount">10</span> | Win: <span id="multiplier">1</span>x</div>
+            <button class="bet-btn" id="increaseBet">BET + ➕</button>
+        </div>
+
+        <div class="reels-container">
+            <div class="reels" id="reels"></div>
+        </div>
+
+        <div class="controls">
+            <button id="spinBtn">🎯 SPIN</button>
+            <button id="turboBtn">⚡ TURBO</button>
+        </div>
+
+        <div class="info-message" id="infoMessage">👈 Adjust bet and click SPIN to play!</div>
+    </div>
+
+    <script type="module">
+        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDndzhlq7tIR03UZroax1iE59RXF27I4Z8",
+            authDomain: "jili-c6b1a.firebaseapp.com",
+            projectId: "jili-c6b1a",
+            storageBucket: "jili-c6b1a.firebasestorage.app",
+            messagingSenderId: "665157239109",
+            appId: "1:665157239109:web:758500e566830c29b57e2c",
+            measurementId: "G-YSZYWY42QB"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+
+        // Sound Generator - Web Audio API (no external files needed!)
+        class SoundManager {
+            constructor() {
+                this.audioContext = null;
+                this.soundEnabled = true;
+                this.initAudioContext();
+            }
+
+            initAudioContext() {
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playBeep(frequency = 800, duration = 100, volume = 0.3) {
+                if (!this.soundEnabled || !this.audioContext) return;
+
+                const now = this.audioContext.currentTime;
+                const osc = this.audioContext.createOscillator();
+                const gain = this.audioContext.createGain();
+
+                osc.connect(gain);
+                gain.connect(this.audioContext.destination);
+
+                osc.frequency.value = frequency;
+                osc.type = 'sine';
+
+                gain.gain.setValueAtTime(volume, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
+
+                osc.start(now);
+                osc.stop(now + duration / 1000);
+            }
+
+            spinSound() {
+                if (!this.soundEnabled || !this.audioContext) return;
+
+                const now = this.audioContext.currentTime;
+                for (let i = 0; i < 8; i++) {
+                    setTimeout(() => {
+                        this.playBeep(400 + i * 100, 80, 0.2);
+                    }, i * 40);
+                }
+            }
+
+            winSound() {
+                if (!this.soundEnabled || !this.audioContext) return;
+
+                const now = this.audioContext.currentTime;
+                const notes = [523, 659, 784, 1047];
+                
+                notes.forEach((freq, i) => {
+                    setTimeout(() => {
+                        this.playBeep(freq, 150, 0.4);
+                    }, i * 100);
+                });
+            }
+
+            jackpotSound() {
+                if (!this.soundEnabled || !this.audioContext) return;
+
+                const now = this.audioContext.currentTime;
+                const notes = [800, 1000, 1200, 1400, 1600, 1400, 1200, 1000];
+                
+                notes.forEach((freq, i) => {
+                    setTimeout(() => {
+                        this.playBeep(freq, 100, 0.3);
+                    }, i * 80);
+                });
+            }
+
+            bonusSound() {
+                if (!this.soundEnabled || !this.audioContext) return;
+
+                const now = this.audioContext.currentTime;
+                for (let i = 0; i < 10; i++) {
+                    const freq = 600 + Math.sin(i) * 200;
+                    setTimeout(() => {
+                        this.playBeep(freq, 100, 0.25);
+                    }, i * 50);
+                }
+            }
+
+            clickSound() {
+                if (!this.soundEnabled || !this.audioContext) return;
+                this.playBeep(600, 50, 0.15);
+            }
+
+            toggleSound() {
+                this.soundEnabled = !this.soundEnabled;
+                return this.soundEnabled;
+            }
+        }
+
+        const soundManager = new SoundManager();
+
+        // Game State
+        const gameState = {
+            balance: 5000,
+            bet: 10,
+            multiplier: 1,
+            isSpinning: false,
+            lastWin: 0,
+            totalWins: 0,
+        };
+
+        // Symbols - ACE heavy for Jili Super Ace
+        const SYMBOLS = ['A', 'A', 'A', 'K', 'Q', 'J', '7'];
+        const WILD = '⭐';
+        const SCATTER = '✨';
+        const REELS = 5;
+        const ROWS = 4;
+
+        // Initialize reels
+        function initReels() {
+            const reelsDiv = document.getElementById('reels');
+            reelsDiv.innerHTML = '';
+
+            for (let col = 0; col < REELS; col++) {
+                const reel = document.createElement('div');
+                reel.className = 'reel';
+                reel.id = `reel-${col}`;
+
+                for (let row = 0; row < ROWS; row++) {
+                    const symbol = document.createElement('div');
+                    symbol.className = 'reel-symbol';
+                    symbol.id = `symbol-${col}-${row}`;
+                    reel.appendChild(symbol);
+                }
+
+                reelsDiv.appendChild(reel);
+            }
+
+            randomizeReels();
+        }
+
+        // Random symbol
+        function getRandomSymbol() {
+            const rand = Math.random();
+            if (rand < 0.1) return WILD;
+            if (rand < 0.15) return SCATTER;
+            return SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+        }
+
+        // Randomize all reels
+        function randomizeReels() {
+            for (let col = 0; col < REELS; col++) {
+                for (let row = 0; row < ROWS; row++) {
+                    const symbol = document.getElementById(`symbol-${col}-${row}`);
+                    const newSymbol = getRandomSymbol();
+                    symbol.textContent = newSymbol;
+                    symbol.className = 'reel-symbol';
+                    
+                    if (newSymbol === WILD) {
+                        symbol.classList.add('wild');
+                    } else if (newSymbol === SCATTER) {
+                        symbol.classList.add('scatter');
+                    }
+                }
+            }
+        }
+
+        // Show popup message
+        function showMessage(text) {
+            const msg = document.createElement('div');
+            msg.className = 'message';
+            msg.textContent = text;
+            document.body.appendChild(msg);
+            setTimeout(() => msg.remove(), 2500);
+        }
+
+        // Check for wins
+        function checkWins() {
+            let totalWin = 0;
+            const winningSymbols = new Set();
+
+            // Check each row
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < REELS - 2; col++) {
+                    const sym1 = document.getElementById(`symbol-${col}-${row}`).textContent;
+                    const sym2 = document.getElementById(`symbol-${col + 1}-${row}`).textContent;
+                    const sym3 = document.getElementById(`symbol-${col + 2}-${row}`).textContent;
+
+                    if (sym1 && sym1 === sym2 && sym2 === sym3) {
+                        let matchLength = 3;
+                        let payout = 1;
+
+                        // Check 4 in a row
+                        if (col + 3 < REELS && sym3 === document.getElementById(`symbol-${col + 3}-${row}`).textContent) {
+                            matchLength = 4;
+                            payout = 2;
+                        }
+
+                        // Check 5 in a row
+                        if (col + 4 < REELS && document.getElementById(`symbol-${col + 3}-${row}`).textContent === document.getElementById(`symbol-${col + 4}-${row}`).textContent) {
+                            matchLength = 5;
+                            payout = 3;
+                        }
+
+                        // Bonus for ACE
+                        if (sym1 === 'A') payout *= 2.5;
+                        if (sym1 === WILD) payout *= 2.5;
+                        if (sym1 === SCATTER) payout *= 2;
+
+                        const baseWin = gameState.bet * (25 + matchLength * 10);
+                        totalWin += baseWin * payout * gameState.multiplier;
+
+                        // Mark winning symbols
+                        for (let i = col; i < col + matchLength; i++) {
+                            winningSymbols.add(`symbol-${i}-${row}`);
+                        }
+                    }
+                }
+            }
+
+            // Highlight winners
+            winningSymbols.forEach(id => {
+                document.getElementById(id).classList.add('winning');
+            });
+
+            // Bonus messages
+            let scatterCount = 0;
+            let wildCount = 0;
+            let aceCount = 0;
+
+            for (let col = 0; col < REELS; col++) {
+                for (let row = 0; row < ROWS; row++) {
+                    const sym = document.getElementById(`symbol-${col}-${row}`).textContent;
+                    if (sym === SCATTER) scatterCount++;
+                    if (sym === WILD) wildCount++;
+                    if (sym === 'A') aceCount++;
+                }
+            }
+
+            if (scatterCount >= 3) {
+                const bonus = gameState.bet * 100;
+                totalWin += bonus;
+                soundManager.bonusSound();
+                showMessage(`💥 SCATTER BONUS! +${bonus}`);
+            }
+
+            if (wildCount >= 3) {
+                const bonus = gameState.bet * 150;
+                totalWin += bonus;
+                soundManager.bonusSound();
+                showMessage(`🌟 WILD BONUS! +${bonus}`);
+            }
+
+            if (aceCount >= 5) {
+                const bonus = gameState.bet * 200;
+                totalWin += bonus;
+                soundManager.jackpotSound();
+                showMessage(`🎰 SUPER ACE! +${bonus}`);
+            }
+
+            return totalWin;
+        }
+
+        // Spin function
+        async function spin(isTurbo = false) {
+            if (gameState.isSpinning) return;
+
+            const actualBet = gameState.bet * gameState.multiplier;
+            if (gameState.balance < actualBet) {
+                showMessage('❌ INSUFFICIENT BALANCE');
+                return;
+            }
+
+            gameState.isSpinning = true;
+            gameState.balance -= actualBet;
+            updateUI();
+
+            // Play spin start sound
+            soundManager.spinSound();
+
+            // Disable buttons
+            document.getElementById('spinBtn').disabled = true;
+            document.getElementById('turboBtn').disabled = true;
+            document.getElementById('decreaseBet').disabled = true;
+            document.getElementById('increaseBet').disabled = true;
+
+            // Spin time
+            const duration = isTurbo ? 600 : 1500;
+            const iterations = isTurbo ? 4 : 12;
+            const perIteration = duration / iterations;
+
+            // Spin animation
+            for (let i = 0; i < iterations; i++) {
+                const allSymbols = document.querySelectorAll('.reel-symbol');
+                allSymbols.forEach(s => s.classList.add('spinning'));
+
+                randomizeReels();
+                await new Promise(r => setTimeout(r, perIteration));
+
+                allSymbols.forEach(s => s.classList.remove('spinning'));
+            }
+
+            // Final result
+            randomizeReels();
+            await new Promise(r => setTimeout(r, 300));
+
+            // Check wins
+            const win = checkWins();
+
+            if (win > 0) {
+                gameState.balance += win;
+                gameState.lastWin = win;
+                gameState.totalWins++;
+                
+                // Play win sound
+                soundManager.winSound();
+                showMessage(`🎊 WIN! +${win} COINS! 🎊`);
+                
+                logEvent(analytics, 'spin_win', {
+                    win_amount: win,
+                    balance: gameState.balance,
+                    multiplier: gameState.multiplier,
+                    bet: gameState.bet
+                });
+            } else {
+                gameState.lastWin = 0;
+                soundManager.playBeep(300, 200, 0.15);
+                showMessage('Try Again!');
+                
+                logEvent(analytics, 'spin_loss', {
+                    balance: gameState.balance,
+                    bet: gameState.bet
+                });
+            }
+
+            updateUI();
+
+            gameState.isSpinning = false;
+            document.getElementById('spinBtn').disabled = false;
+            document.getElementById('turboBtn').disabled = false;
+            document.getElementById('decreaseBet').disabled = false;
+            document.getElementById('increaseBet').disabled = false;
+
+            logEvent(analytics, 'spin', {
+                turbo: isTurbo,
+                multiplier: gameState.multiplier,
+                bet: gameState.bet,
+                balance: gameState.balance
+            });
+        }
+
+        // Update UI
+        function updateUI() {
+            document.getElementById('balance').textContent = gameState.balance;
+            document.getElementById('betAmount').textContent = gameState.bet;
+            document.getElementById('multiplier').textContent = gameState.multiplier;
+            document.getElementById('lastWin').textContent = gameState.lastWin;
+            document.getElementById('totalWins').textContent = gameState.totalWins;
+        }
+
+        // Increase bet
+        function increaseBet() {
+            if (gameState.bet < 1000) {
+                gameState.bet += 10;
+                gameState.multiplier = Math.floor(gameState.bet / 10);
+                soundManager.clickSound();
+                updateUI();
+                logEvent(analytics, 'bet_increase', { new_bet: gameState.bet });
+            }
+        }
+
+        // Decrease bet
+        function decreaseBet() {
+            if (gameState.bet > 10) {
+                gameState.bet -= 10;
+                gameState.multiplier = Math.floor(gameState.bet / 10);
+                soundManager.clickSound();
+                updateUI();
+                logEvent(analytics, 'bet_decrease', { new_bet: gameState.bet });
+            }
+        }
+
+        // Toggle sound
+        function toggleSound() {
+            const enabled = soundManager.toggleSound();
+            const btn = document.getElementById('soundToggle');
+            if (enabled) {
+                btn.textContent = '🔊 SOUND ON';
+                btn.classList.remove('muted');
+                soundManager.playBeep(800, 100, 0.3);
+            } else {
+                btn.textContent = '🔇 SOUND OFF';
+                btn.classList.add('muted');
+            }
+        }
+
+        // Event listeners
+        document.getElementById('spinBtn').addEventListener('click', () => spin(false));
+        document.getElementById('turboBtn').addEventListener('click', () => spin(true));
+        document.getElementById('increaseBet').addEventListener('click', increaseBet);
+        document.getElementById('decreaseBet').addEventListener('click', decreaseBet);
+        document.getElementById('soundToggle').addEventListener('click', toggleSound);
+
+        // Initialize
+        initReels();
+        updateUI();
+
+        // Log session
+        logEvent(analytics, 'game_start', {
+            starting_balance: gameState.balance
+        });
+
+        window.addEventListener('beforeunload', () => {
+            logEvent(analytics, 'game_end', {
+                final_balance: gameState.balance,
+                total_wins: gameState.totalWins
+            });
+        });
+    </script>
+</body>
+</html>
