@@ -1,139 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jili Super Ace - Slot Machine</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #0d0221 0%, #1a0033 50%, #0d0221 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 10px; }
-        .game-container { background: linear-gradient(to bottom, #1a0033, #0d0221); border: 4px solid #FFD700; border-radius: 20px; padding: 20px; max-width: 900px; width: 100%; box-shadow: 0 0 80px rgba(255, 215, 0, 0.8), inset 0 0 40px rgba(255, 215, 0, 0.2); overflow-x: hidden; }
-        .header { text-align: center; margin-bottom: 15px; color: #FFD700; text-shadow: 0 0 30px rgba(255, 215, 0, 1); }
-        .header h1 { font-size: 2.5em; margin-bottom: 3px; font-weight: bold; letter-spacing: 1px; }
-        .header p { font-size: 1em; color: #FF6600; text-shadow: 0 0 15px rgba(255, 102, 0, 1); }
-        .header-controls { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
-        .sound-toggle { background: linear-gradient(135deg, #4a4a4a, #2a2a2a); border: 2px solid #FF6600; border-radius: 8px; padding: 8px 12px; color: white; cursor: pointer; font-weight: bold; font-size: 1em; transition: all 0.3s; }
-        .sound-toggle:hover { box-shadow: 0 0 15px rgba(255, 102, 0, 0.8); transform: scale(1.05); }
-        .sound-toggle.muted { background: linear-gradient(135deg, #8B0000, #660000); border-color: #FFD700; }
-        .stats-top { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-        .stat { background: rgba(255, 215, 0, 0.1); border: 2px solid #FF6600; border-radius: 10px; padding: 10px; text-align: center; color: white; }
-        .stat-label { font-size: 0.8em; color: #FFD700; text-transform: uppercase; }
-        .stat-value { font-size: 1.4em; color: #FFD700; font-weight: bold; margin-top: 3px; }
-        .bet-controls { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; margin-bottom: 15px; align-items: center; background: rgba(255, 102, 0, 0.1); border: 2px solid #FF6600; border-radius: 10px; padding: 12px; }
-        .bet-btn { padding: 10px; background: linear-gradient(135deg, #FF6600, #FFAA00); border: 2px solid #FFD700; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: all 0.3s; font-size: 0.95em; }
-        .bet-btn:hover { box-shadow: 0 0 20px rgba(255, 102, 0, 1); transform: scale(1.05); }
-        .bet-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .bet-display { text-align: center; color: #FFD700; font-weight: bold; font-size: 1.3em; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
-        .reels-container { background: linear-gradient(to bottom, #0a0015, #1a0033); border: 4px solid #FFD700; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8); overflow: hidden; }
-        .reels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-        .reel { display: flex; flex-direction: column; gap: 6px; perspective: 1000px; }
-        .reel-symbol { aspect-ratio: 3/4; background: linear-gradient(135deg, #2a1a52 0%, #1a0a32 100%); border: 2px solid #FF6600; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 2em; font-weight: bold; color: white; text-shadow: 0 0 10px rgba(255, 215, 0, 0.8); transition: all 0.1s; box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5); overflow: hidden; }
-        .card-image { width: 90%; height: 90%; object-fit: contain; border-radius: 8px; }
-        .reel-symbol.spinning { animation: spin-reel 0.1s ease-in-out; }
-        @keyframes spin-reel { 0%, 100% { transform: rotateY(0deg); } 50% { transform: rotateY(180deg); } }
-        .reel-symbol.wild { box-shadow: 0 0 20px rgba(0, 255, 136, 1), inset 0 0 15px rgba(0, 255, 136, 0.4); }
-        .reel-symbol.scatter { box-shadow: 0 0 20px rgba(255, 170, 0, 1), inset 0 0 15px rgba(255, 255, 0, 0.3); }
-        .reel-symbol.winning { animation: pulse-glow 0.5s ease-in-out infinite !important; box-shadow: 0 0 30px rgba(255, 215, 0, 1), inset 0 0 20px rgba(255, 215, 0, 0.6) !important; border-color: #FFFF00 !important; }
-        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); } 50% { box-shadow: 0 0 40px rgba(255, 215, 0, 1); } }
-        .controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
-        button { padding: 15px; font-size: 1.1em; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; }
-        #spinBtn { background: linear-gradient(135deg, #FF0000, #CC0000); color: white; box-shadow: 0 0 30px rgba(255, 0, 0, 0.8); border: 3px solid #FFFF00; font-size: 1.2em; }
-        #spinBtn:hover:not(:disabled) { box-shadow: 0 0 60px rgba(255, 0, 0, 1); transform: scale(1.05); }
-        #spinBtn:disabled { opacity: 0.3; cursor: not-allowed; }
-        #turboBtn { background: linear-gradient(135deg, #FF6600, #FFAA00); color: white; box-shadow: 0 0 25px rgba(255, 102, 0, 0.8); border: 3px solid #FFFF00; }
-        #turboBtn:hover:not(:disabled) { box-shadow: 0 0 50px rgba(255, 102, 0, 1); transform: scale(1.05); }
-        #turboBtn:disabled { opacity: 0.3; cursor: not-allowed; }
-        .message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, #FFD700 0%, #FFED4E 100%); border: 4px solid #FF6600; border-radius: 25px; padding: 40px 60px; font-size: 2.5em; font-weight: bold; color: black; text-shadow: 3px 3px 6px rgba(255, 102, 0, 0.8); box-shadow: 0 0 80px rgba(255, 215, 0, 1); animation: message-pop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 1000; pointer-events: none; }
-        @keyframes message-pop { 0% { transform: translate(-50%, -50%) scale(0) rotate(-20deg); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; } }
-        .info-message { background: rgba(255, 102, 0, 0.2); border: 2px solid #FF6600; border-radius: 10px; padding: 12px; text-align: center; color: #FFD700; font-weight: bold; font-size: 1em; }
-        @media (max-width: 600px) { .header h1 { font-size: 1.8em; } .reel-symbol { font-size: 1.5em; } .stats-top { grid-template-columns: repeat(3, 1fr); } button { padding: 12px; font-size: 0.95em; } .header-controls { flex-direction: column; } }
-        /* focus outline for accessibility */
-        button:focus, .bet-btn:focus, .sound-toggle:focus { outline: 3px solid rgba(255,215,0,0.6); }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>JILI SUPER ACE</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#0d0221,#1a0033);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .game{width:920px;max-width:100%;background:linear-gradient(180deg,#1a0033,#0d0221);border:4px solid #ffd700;padding:18px;border-radius:16px}
+    .header{text-align:center;color:#ffd700;margin-bottom:12px}
+    .reels{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;background:rgba(0,0,0,0.05);padding:12px;border-radius:12px}
+    .reel{display:flex;flex-direction:column;gap:8px}
+    .cell{aspect-ratio:3/4;background:linear-gradient(135deg,#2a1a52,#1a0a32);border:2px solid #ff6600;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:#fff;text-shadow:0 0 8px rgba(255,215,0,0.6);overflow:hidden}
+    .cell img{width:90%;height:90%;object-fit:contain;border-radius:8px;display:block}
+    .cell.wild{box-shadow:0 0 20px #00ff88}
+    .cell.scatter{box-shadow:0 0 20px #ffaa00}
+    .cell.winning{animation:glow .6s ease-in-out infinite;border-color:#ffff00}
+    @keyframes glow{0%{filter:drop-shadow(0 0 8px #ffd700)}50%{filter:drop-shadow(0 0 28px #ffd700)}100%{filter:drop-shadow(0 0 8px #ffd700)}}
+    .controls{display:flex;gap:10px;justify-content:center;margin-top:12px}
+    button{padding:12px 18px;border-radius:10px;border:0;background:#ff6600;color:#fff;font-weight:700;cursor:pointer}
+    .stats{display:flex;gap:12px;justify-content:center;margin-bottom:12px}
+    .stat{background:rgba(255,215,0,0.06);padding:8px 12px;border-radius:8px;color:#ffd700}
+  </style>
 </head>
 <body>
-    <div class="game-container">
-        <div class="header">
-            <h1>🎰 JILI SUPER ACE 🎰</h1>
-            <p>SLOT MACHINE</p>
-            <div class="header-controls">
-                <button class="sound-toggle" id="soundToggle" aria-pressed="false" aria-label="Toggle sound">🔊 SOUND ON</button>
-            </div>
-        </div>
+  <div class="game" role="application">
+    <div class="header"><h1>🎰 JILI SUPER ACE</h1><div style="color:#ffb366">Image mode</div></div>
 
-        <div class="stats-top" role="region" aria-live="polite">
-            <div class="stat">
-                <div class="stat-label">Balance</div>
-                <div class="stat-value" id="balance">5000</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Win</div>
-                <div class="stat-value" id="lastWin">0</div>
-            </div>
-            <div class="stat">
-                <div class="stat-label">Total Wins</div>
-                <div class="stat-value" id="totalWins">0</div>
-            </div>
-        </div>
-
-        <div class="bet-controls">
-            <button class="bet-btn" id="decreaseBet" aria-label="Decrease bet">➖ BET -</button>
-            <div class="bet-display">Bet: <span id="betAmount">10</span> | Win: <span id="multiplier">1</span>x</div>
-            <button class="bet-btn" id="increaseBet" aria-label="Increase bet">BET + ➕</button>
-        </div>
-
-        <div class="reels-container">
-            <div class="reels" id="reels" aria-hidden="false"></div>
-        </div>
-
-        <div class="controls">
-            <button id="spinBtn" aria-label="Spin">🎯 SPIN</button>
-            <button id="turboBtn" aria-label="Turbo spin">⚡ TURBO</button>
-        </div>
-
-        <div class="info-message" id="infoMessage">👈 Adjust bet and click SPIN to play!</div>
+    <div class="stats" aria-live="polite">
+      <div class="stat">Balance: <span id="balance">5000</span></div>
+      <div class="stat">Last Win: <span id="lastWin">0</span></div>
+      <div class="stat">Total Wins: <span id="totalWins">0</span></div>
     </div>
 
-    <script type="module">
-        // Firebase imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js";
+    <div class="reels" id="reels" aria-hidden="false"></div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDndzhlq7tIR03UZroax1iE59RXF27I4Z8",
-            authDomain: "jili-c6b1a.firebaseapp.com",
-            projectId: "jili-c6b1a",
-            storageBucket: "jili-c6b1a.firebasestorage.app",
-            messagingSenderId: "665157239109",
-            appId: "1:665157239109:web:758500e566830c29b57e2c",
-            measurementId: "G-YSZYWY42QB"
-        };
+    <div class="controls">
+      <button id="spinBtn">🎯 SPIN</button>
+      <button id="turboBtn">⚡ TURBO</button>
+      <button id="toggleSound">🔊 SOUND</button>
+    </div>
+  </div>
 
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
+  <script type="module">
+    // Only import firebase-app synchronously; analytics is loaded dynamically to avoid blocking the app
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
 
-        // Sound Manager
-        class SoundManager {
-            constructor() {
-                this.audioContext = null;
-                this.soundEnabled = true;
-                this.initAudioContext();
-            }
+    const firebaseConfig = {
+      apiKey: "AIzaSyDndzhlq7tIR03UZroax1iE59RXF27I4Z8",
+      authDomain: "jili-c6b1a.firebaseapp.com",
+      projectId: "jili-c6b1a",
+      storageBucket: "jili-c6b1a.firebasestorage.app",
+      messagingSenderId: "665157239109",
+      appId: "1:665157239109:web:758500e566830c29b57e2c",
+      measurementId: "G-YSZYWY42QB"
+    };
 
-            initAudioContext() {
-                if (!this.audioContext) {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-            }
+    const app = initializeApp(firebaseConfig);
+    let analyticsMod = null;
+    let analytics = null;
+    (async () => {
+      try {
+        analyticsMod = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js');
+        analytics = analyticsMod.getAnalytics(app);
+      } catch (e) {
+        console.warn('Firebase analytics not available:', e);
+        analyticsMod = null; analytics = null;
+      }
+    })();
 
-            async resumeIfNeeded() {
-                try {
-                    if (this.audioContext && this.audioContext.state === 'suspended') {
-                        await this.audioContext.resume();
-                    }
-                } catch (e) {
-                    // ignore
-                }
-            }
+    function safeLog(eventName, params = {}){
+      try{ if(analyticsMod && analytics){ analyticsMod.logEvent(analytics, eventName, params); } }catch(e){}
+    }
 
-        
+    // Sound manager
+    class SoundManager {
+      constructor(){ this.audioContext = null; this.enabled = true; }
+      init(){ if(!this.audioContext) this.audioContext = new (window.AudioContext||window.webkitAudioContext)(); }
+      async resumeIfNeeded(){ try{ this.init(); if(this.audioContext.state==='suspended') await this.audioContext.resume(); }catch(e){} }
+      playBeep(freq=600,dur=0.08,vol=0.2){ if(!this.audioContext || !this.enabled) return; const o=this.audioContext.createOscillator(); const g=this.audioContext.createGain(); o.type='sine'; o.frequency.value=freq; g.gain.value=vol; o.connect(g); g.connect(this.audioContext.destination); o.start(); o.stop(this.audioContext.currentTime+dur); setTimeout(()=>{try{o.disconnect();g.disconnect()}catch(e){}},(dur+0.05)*1000); }
+      spinSound(){ for(let i=0;i<6;i++) setTimeout(()=>this.playBeep(400+i*80,0.06,0.12), i*40); }
+      winSound(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.playBeep(f,0.14,0.35), i*120)); }
+      jackpotSound(){ [800,1000,1200,1400,1600,1400,1200,1000].forEach((f,i)=>setTimeout(()=>this.playBeep(f,0.09,0.25), i*90)); }
+      toggle(){ this.enabled = !this.enabled; return this.enabled; }
+    }
+
+    const soundManager = new SoundManager();
+
+    // Symbols mapped to image files
+    const SYMBOL_POOL = [
+      {id:'ace', name:'Ace', file:'assets/cards/ace.svg', weight:6, type:'face'},
+      {id:'king',name:'King', file:'assets/cards/king.svg', weight:3, type:'face'},
+      {id:'queen',name:'Queen', file:'assets/cards/queen.svg', weight:3, type:'face'},
+      {id:'jack',name:'Jack', file:'assets/cards/jack.svg', weight:3, type:'face'},
+      {id:'speed',name:'Speed', file:'assets/cards/speed.svg', weight:2, type:'symbol'},
+      {id:'diamond',name:'Diamond', file:'assets/cards/diamond.svg', weight:2, type:'symbol'},
+      {id:'heart',name:'Heart', file:'assets/cards/heart.svg', weight:2, type:'symbol'},
+      {id:'clubs',name:'Clubs', file:'assets/cards/clubs.svg', weight:2, type:'symbol'}
+    ];
+    const WILD = {id:'wild', name:'Wild', file:'assets/cards/wild.svg', weight:0.1, type:'wild'};
+    const SCATTER = {id:'scatter', name:'Scatter', file:'assets/cards/scatter-coin.svg', weight:0.05, type:'scatter'};
+
+    const REELS = 5, ROWS = 4;
+
+    function buildWeightedPool(){ const pool = []; SYMBOL_POOL.forEach(s=>{ const count = Math.max(1, Math.round(s.weight*10)); for(let i=0;i<count;i++) pool.push(s); }); const wildCount = Math.max(1, Math.round(WILD.weight*100)); for(let i=0;i<wildCount;i++) pool.push(WILD); const scatterCount = Math.max(1, Math.round(SCATTER.weight*100)); for(let i=0;i<scatterCount;i++) pool.push(SCATTER); return pool; }
+    const WEIGHTED_POOL = buildWeightedPool();
+    function weightedPick(){ return WEIGHTED_POOL[Math.floor(Math.random()*WEIGHTED_POOL.length)]; }
+
+    // Game state
+    const gameState = { balance:5000, bet:10, multiplier:1, isSpinning:false, lastWin:0, totalWins:0 };
+
+    // Init DOM reels
+    function initReels(){ const container = document.getElementById('reels'); container.innerHTML='';
+      for(let c=0;c<REELS;c++){ const col = document.createElement('div'); col.className='reel'; col.id=`reel-${c}`;
+        for(let r=0;r<ROWS;r++){ const cell = document.createElement('div'); cell.className='cell'; cell.id=`symbol-${c}-${r}`; const img = document.createElement('img'); img.className='card-image'; img.alt=''; cell.appendChild(img); col.appendChild(cell); }
+        container.appendChild(col);
+      }
+      randomizeReels();
+    }
+
+    function getSymbolIdAt(c,r){ const img = document.querySelector(`#symbol-${c}-${r} img`); return img && img.dataset ? img.dataset.id : null; }
+
+    function setImageWithFallback(img, s){ img.dataset.id = s.id; img.alt = s.name; img.src = s.file;
+      img.onload = () => { /* loaded */ };
+      img.onerror = () => {
+        console.warn('Image failed to load', s.file);
+        // use inline placeholder and annotate parent
+        const parent = img.parentElement;
+        parent.classList.remove('wild','scatter');
+        parent.textContent = s.name[0] || '?';
+        parent.style.fontSize = '2rem';
+      };
+    }
+
+    function randomizeReels(){
+      for(let c=0;c<REELS;c++){
+        for(let r=0;r<ROWS;r++){
+          const el = document.getElementById(`symbol-${c}-${r}`);
+          if(!el) continue;
+          // ensure the cell contains an img (fallback may have removed it)
+          let img = el.querySelector('img');
+          if(!img){ el.innerHTML = ''; img = document.createElement('img'); img.className='card-image'; el.appendChild(img); }
+          const s = weightedPick();
+          el.className = 'cell';
+          if(s.type==='wild') el.classList.add('wild'); else if(s.type==='scatter') el.classList.add('scatter');
+          setImageWithFallback(img, s);
+        }
+      }
+    }
+
+    function showMessage(text){ alert(text); }
+
+    function checkWins(){
+      let totalWin = 0; const winners = new Set();
+      for(let r=0;r<ROWS;r++){
+        for(let c=0;c<REELS-2;c++){
+          const s1 = getSymbolIdAt(c,r); const s2 = getSymbolIdAt(c+1,r); const s3 = getSymbolIdAt(c+2,r);
+          if(!s1||!s2||!s3) continue;
+          if(s1===s2 && s2===s3){
+            let matchLength = 3; let payout = 1;
+            for(let k=c+3;k<REELS;k++){ const next = getSymbolIdAt(k,r); if(next===s1) { matchLength++; if(matchLength===4) payout=2; if(matchLength===5) payout=3; } else break; }
+            if(s1==='ace') payout *= 2.5; if(s1===WILD.id) payout *= 2.5; if(s1===SCATTER.id) payout *= 2;
+            const baseWin = gameState.bet * (25 + matchLength * 10);
+            totalWin += baseWin * payout * gameState.multiplier;
+            for(let i=c;i<c+matchLength;i++) winners.add(`symbol-${i}-${r}`);
+          }
+        }
+      }
+      winners.forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.add('winning'); });
+
+      // bonus counts
+      let scatterCount=0, wildCount=0, aceCount=0;
+      for(let c=0;c<REELS;c++) for(let r=0;r<ROWS;r++){ const id = getSymbolIdAt(c,r); if(id===SCATTER.id) scatterCount++; if(id===WILD.id) wildCount++; if(id==='ace') aceCount++; }
+      if(scatterCount>=3){ const bonus = gameState.bet * 100; totalWin += bonus; soundManager.jackpotSound(); showMessage(`💥 SCATTER BONUS! +${bonus}`); }
+      if(wildCount>=3){ const bonus = gameState.bet * 150; totalWin += bonus; soundManager.bonusSound(); showMessage(`🌟 WILD BONUS! +${bonus}`); }
+      if(aceCount>=5){ const bonus = gameState.bet * 200; totalWin += bonus; soundManager.jackpotSound(); showMessage(`🎰 SUPER ACE! +${bonus}`); }
+
+      return Math.floor(totalWin);
+    }
+
+    async function spin(isTurbo=false){
+      if(gameState.isSpinning) return;
+      await soundManager.resumeIfNeeded();
+      const actualBet = gameState.bet * gameState.multiplier;
+      if(gameState.balance < actualBet){ showMessage('❌ INSUFFICIENT BALANCE'); return; }
+      gameState.isSpinning = true; gameState.balance -= actualBet; updateUI(); soundManager.spinSound();
+      document.getElementById('spinBtn').disabled = true; document.getElementById('turboBtn').disabled = true;
+
+      const duration = isTurbo ? 600 : 1500; const iterations = isTurbo ? 4 : 12; const per = Math.max(40, Math.floor(duration/iterations));
+      for(let i=0;i<iterations;i++){
+        document.querySelectorAll('.cell').forEach(c=>c.classList.add('spinning'));
+        randomizeReels();
+        await new Promise(r=>setTimeout(r, per));
+        document.querySelectorAll('.cell').forEach(c=>c.classList.remove('spinning'));
+      }
+
+      randomizeReels(); await new Promise(r=>setTimeout(r, 260));
+      const win = checkWins();
+      if(win>0){ gameState.balance += win; gameState.lastWin = win; gameState.totalWins++; soundManager.winSound(); showMessage(`🎊 WIN! +${win} COINS! 🎊`); safeLog('spin_win', {win_amount: win, balance: gameState.balance, multiplier: gameState.multiplier, bet: gameState.bet}); }
+      else { gameState.lastWin = 0; soundManager.playBeep(300,0.2,0.15); showMessage('Try Again!'); safeLog('spin_loss', {balance: gameState.balance, bet: gameState.bet}); }
+
+      updateUI(); gameState.isSpinning = false; document.getElementById('spinBtn').disabled = false; document.getElementById('turboBtn').disabled = false;
+      safeLog('spin', {turbo:isTurbo, multiplier:gameState.multiplier, bet:gameState.bet, balance:gameState.balance});
+    }
+
+    function updateUI(){ document.getElementById('balance').textContent = gameState.balance; document.getElementById('lastWin').textContent = gameState.lastWin; document.getElementById('totalWins').textContent = gameState.totalWins; }
+
+    function increaseBet(){ if(gameState.bet < 1000){ gameState.bet += 10; gameState.multiplier = Math.floor(gameState.bet/10); soundManager.playBeep(700,0.06,0.12); updateUI(); safeLog('bet_increase',{new_bet:gameState.bet}); } }
+    function decreaseBet(){ if(gameState.bet > 10){ gameState.bet -= 10; gameState.multiplier = Math.floor(gameState.bet/10); soundManager.playBeep(500,0.06,0.12); updateUI(); safeLog('bet_decrease',{new_bet:gameState.bet}); } }
+
+    async function toggleSound(){ const enabled = soundManager.toggle(); const btn = document.getElementById('toggleSound'); btn.textContent = enabled? '🔊 SOUND' : '🔇 MUTE'; await soundManager.resumeIfNeeded(); if(enabled) soundManager.playBeep(800,0.08,0.2); }
+
+    document.getElementById('spinBtn').addEventListener('click', ()=> spin(false));
+    document.getElementById('turboBtn').addEventListener('click', ()=> spin(true));
+    document.getElementById('toggleSound').addEventListener('click', ()=> toggleSound());
+
+    // Init
+    initReels(); updateUI(); safeLog('game_start', {starting_balance: gameState.balance});
+    window.addEventListener('beforeunload', ()=> safeLog('game_end', {final_balance: gameState.balance, total_wins: gameState.totalWins}));
+  </script>
+</body>
+</html>
