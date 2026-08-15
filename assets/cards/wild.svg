@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="420" viewBox="0 0 300 420">
+  <rect width="100%" height="100%" rx="20" ry="20" fill="#fffdf7" stroke="#000" stroke-width="4"/>
+  <g transform="translate(80,120) scale(1.8)">
+    <path d="M60 0 L75 35 L115 40 L85 65 L95 105 L60 85 L25 105 L35 65 L5 40 L45 35 Z" fill="#ffdd00" stroke="#e6c200" stroke-width="3"/>
+  </g>
+  <text x="18" y="392" font-family="Arial" font-size="14" fill="#999">WILD</text>
+</svg>
